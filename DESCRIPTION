@@ -1,0 +1,55 @@
+Package: bufferedThresholdPanel
+Type: Package
+Title: Buffered Panel Threshold Regression with Hysteresis
+Version: 0.1.0
+Authors@R: c(
+    person("Faycal", "Hamdi", email = "faycal.hamdi@univ-constantine2.dz",
+           role = "aut"),
+    person("Messaoud", "Zouikri", email = "mzouikri@parisnanterre.fr",
+           role = c("aut", "cre"), comment = c(ORCID = "0000-0002-6253-9074")),
+    person("Said", "Souam", role = "aut"))
+Description: Estimates panel data threshold regression models with one or two
+    threshold parameters following Hansen (1999) <doi:10.1016/S0304-4076(99)00025-1>
+    and Hansen (2000) <doi:10.2307/2669382>. Implements the Buffered Panel
+    Threshold Data (BTPD) model of Belarbi et al. (2021)
+    <doi:10.1016/j.econmod.2021.02.018>, which extends panel threshold
+    regression with a hysteresis (buffer zone) mechanism for smooth transitions
+    between regimes. Supports two- and three-regime models, bootstrap inference
+    for threshold existence (sequential F1,2 and F2,3 tests), parallel bootstrap
+    computation, and publication-ready output tables following the conventions of
+    major economics journals. Includes a balanced panel dataset of 92 countries
+    (2002-2016) used in Hamdi et al. (2025) <doi:10.1111/twec.70023>.
+License: GPL (>= 3) + file LICENSE
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.3.3
+Depends: R (>= 4.1.0)
+Imports:
+    future (>= 1.33.0),
+    furrr (>= 0.3.1),
+    ggplot2 (>= 3.4.0),
+    gt (>= 0.10.0),
+    dplyr (>= 1.1.0),
+    tibble (>= 3.2.0),
+    broom (>= 1.0.5),
+    parallelly (>= 1.36.0),
+    stats,
+    rlang (>= 1.1.0)
+Suggests:
+    cli (>= 3.6.0),
+    kableExtra (>= 1.3.4),
+    shiny (>= 1.7.5),
+    bslib (>= 0.6.0),
+    plotly (>= 4.10.0),
+    DT (>= 0.28),
+    readxl (>= 1.4.0),
+    readr (>= 2.1.0),
+    writexl (>= 1.4.0),
+    tidyr (>= 1.3.0),
+    testthat (>= 3.0.0),
+    knitr (>= 1.44),
+    rmarkdown (>= 2.25),
+    withr (>= 2.5.0)
+VignetteBuilder: knitr
+URL: https://github.com/MessaoudZouikri/bufferedThresholdPanel
+BugReports: https://github.com/MessaoudZouikri/bufferedThresholdPanel/issues
