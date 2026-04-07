@@ -20,9 +20,10 @@ with individual fixed effects.  It implements two complementary models:
 In the BTPD model, a buffer zone $(r_L, r_U)$ sits between two regimes.
 When the threshold variable falls inside the buffer zone, the regime indicator
 retains its previous value rather than jumping immediately.  This path-dependent
-mechanism captures real-world phenomena such as institutional quality traps and
-natural-resource dependence, where regime transitions are gradual rather than
-instantaneous.
+mechanism — known as *hysteresis* and formalised in the time-series context by
+Li et al. (2015) — captures real-world phenomena such as institutional quality
+traps and natural-resource dependence, where regime transitions are gradual
+rather than instantaneous.
 
 ## Key Features
 
@@ -62,49 +63,81 @@ head(panel_data)
 
 ### Sequential regime test
 
+The empirical application estimates two models: in **Model I** `oilRentGDP`
+is the threshold variable and `rle` is a predictor; in **Model II** the roles
+are reversed.
+
 ```r
-# Test: linear → 2-regime → 3-regime
-# Uses oilRentGDP as the threshold variable (BTPD with hysteresis)
-result <- bptr_test_seq(
-  growthRate ~ eci + initialGDP + fdiGDP + capFormGDP +
+# Model I — oil dependence as threshold, Rule of Law as predictor
+result_I <- bptr_test_seq(
+  growthRate ~ rle + eci + initialGDP + fdiGDP + capFormGDP +
                inflation + popGrowth + indVAGDP + tradeOpenness,
   data        = panel_data,
   id          = "countryId",
   time        = "year",
-  q           = "oilRentGDP",
-  buffer      = TRUE,      # BTPD model
+  q           = "oilRentGDP",    # threshold variable
+  buffer      = TRUE,
   n_boot      = 299,
   grid_size_3 = 50,
   alpha       = 0.10
 )
-print(result)
+print(result_I)
+
+# Model II — Rule of Law as threshold, oil dependence as predictor
+result_II <- bptr_test_seq(
+  growthRate ~ oilRentGDP + eci + initialGDP + fdiGDP + capFormGDP +
+               inflation + popGrowth + indVAGDP + tradeOpenness,
+  data        = panel_data,
+  id          = "countryId",
+  time        = "year",
+  q           = "rle",           # threshold variable
+  buffer      = TRUE,
+  n_boot      = 299,
+  grid_size_3 = 50,
+  alpha       = 0.10
+)
+print(result_II)
 ```
 
 ### Direct model estimation
 
 ```r
-# Two-regime BTPD
+# Model I — two-regime BTPD, oilRentGDP as threshold
 fit2 <- bptr(
-  growthRate ~ eci + initialGDP + fdiGDP + capFormGDP +
+  growthRate ~ rle + eci + initialGDP + fdiGDP + capFormGDP +
                inflation + popGrowth + indVAGDP + tradeOpenness,
   data     = panel_data,
   id       = "countryId",
   time     = "year",
-  q        = "oilRentGDP",
+  q        = "oilRentGDP",    # threshold variable
   n_thresh = 1,        # 1 threshold → 2 regimes
   buffer   = TRUE,     # hysteresis transition
   se_type  = "HC3"
 )
 print(fit2)
 
-# Three-regime BTPD
+# Model II — two-regime BTPD, rle as threshold
+fit2_II <- bptr(
+  growthRate ~ oilRentGDP + eci + initialGDP + fdiGDP + capFormGDP +
+               inflation + popGrowth + indVAGDP + tradeOpenness,
+  data     = panel_data,
+  id       = "countryId",
+  time     = "year",
+  q        = "rle",           # threshold variable
+  n_thresh = 1,
+  buffer   = TRUE,
+  se_type  = "HC3"
+)
+print(fit2_II)
+
+# Model I — three-regime BTPD, oilRentGDP as threshold
 fit3 <- bptr(
-  growthRate ~ eci + initialGDP + fdiGDP + capFormGDP +
+  growthRate ~ rle + eci + initialGDP + fdiGDP + capFormGDP +
                inflation + popGrowth + indVAGDP + tradeOpenness,
   data        = panel_data,
   id          = "countryId",
   time        = "year",
-  q           = "oilRentGDP",
+  q           = "oilRentGDP",    # threshold variable
   n_thresh    = 2,        # 2 thresholds → 3 regimes
   buffer      = TRUE,
   grid_size_3 = 50        # 4-D grid search resolution
@@ -184,9 +217,12 @@ a candidate grid:
 ### Sequential tests
 
 The package implements the full sequential testing procedure of Belarbi et al.
-(2021), Section 2.3.  The critical distinction is that the $F_{2,3}$ bootstrap
-draws residuals from the **two-regime model** (not from the linear null), which
-is the null hypothesis of the second step.
+(2021), Section 2.3.  Because the threshold parameter is not identified under
+the null of linearity, the test statistic does not follow a standard
+distribution — a problem first analysed by Davies (1987) — and p-values are
+obtained by bootstrap.  The critical distinction between the two steps is that
+the $F_{2,3}$ bootstrap draws residuals from the **two-regime model** (not from
+the linear null), which is the null hypothesis of the second step.
 
 ## Built-in Dataset
 
@@ -198,7 +234,8 @@ is the null hypothesis of the second step.
 | `country`      | Country name                             |
 | `year`         | Year (2002–2016)                         |
 | `growthRate`   | Annual GDP growth rate (log difference)  |
-| `oilRentGDP`   | Oil rents as % of GDP (threshold var.)   |
+| `oilRentGDP`   | Oil rents as % of GDP (threshold var. Model I; predictor Model II) |
+| `rle`          | Rule of Law index (threshold var. Model II; predictor Model I)     |
 | `initialGDP`   | Log initial GDP per capita               |
 | `eci`          | Economic Complexity Index                |
 | `fdiGDP`       | FDI inflows as % of GDP                  |
@@ -217,6 +254,11 @@ Growth, institutions and oil dependence: A buffered threshold panel approach.
 *Economic Modelling*, 99, 105477.
 <https://doi.org/10.1016/j.econmod.2021.02.018>
 
+Davies, R. B. (1987). 
+Hypothesis testing when a nuisance parameter is present only under the alternative. 
+*Biometrika*, 74(1), 33–43. 
+<https://doi.org/10.1093/biomet/74.1.33>
+
 Hamdi, F., Souam, S., and Zouikri, M. (2025).
 The heterogeneous effect of economic complexity on growth and human development:
 New empirical evidence using buffered panel threshold regression.
@@ -233,12 +275,17 @@ Sample splitting and threshold estimation.
 *Econometrica*, 68(3), 575–603.
 <https://doi.org/10.2307/2669382>
 
+Li, G., Guan, B., Li, W., & Yu, P. L. H. (2015). 
+Hysteretic autoregressive time series models. 
+*Biometrika*, 102(3), 717–723. 
+<https://doi.org/10.1093/biomet/asv017>
+
 ## License
 
 GPL (≥ 3) — see [LICENSE](LICENSE)
 
 ## Authors
 
-- **Messaoud Zouikri** (maintainer) — EconomiX-CNRS, Université Paris Nanterre
 - **Faycal Hamdi** — RECITS Laboratory, USTHB, Algiers
 - **Said Souam** — EconomiX-CNRS, Université Paris Nanterre
+- **Messaoud Zouikri** (maintainer) — EconomiX-CNRS, Université Paris Nanterre

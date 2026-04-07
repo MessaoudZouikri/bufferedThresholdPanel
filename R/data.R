@@ -6,7 +6,7 @@
 #' complexity on GDP growth and human development using the Buffered Panel
 #' Threshold Data (BTPD) model of Belarbi et al. (2021).
 #'
-#' @format A data frame with 1 380 rows and 13 columns:
+#' @format A data frame with 1 380 rows and 14 columns:
 #' \describe{
 #'   \item{countryId}{Integer country identifier (1–92, alphabetical order)}
 #'   \item{country}{Country name (character)}
@@ -19,7 +19,17 @@
 #'     the value of crude oil production at world prices and total production
 #'     costs, expressed as a share of GDP.
 #'     Mean 3.36, SD 8.85, range \[0, 59.2\].
-#'     \emph{Threshold variable.}}
+#'     \emph{Threshold variable in Model I (oil dependence); predictor in
+#'     Model II (institutions).}}
+#'   \item{rle}{Rule of Law index from the World Bank Worldwide Governance
+#'     Indicators (WGI).  Captures perceptions of the extent to which agents
+#'     have confidence in and abide by the rules of society, including the
+#'     quality of contract enforcement, property rights, the police, and the
+#'     courts, as well as the likelihood of crime and violence.  Rescaled to
+#'     the unit interval \[0, 1\], where higher values indicate stronger rule
+#'     of law.  Mean 0.500, SD 0.257, range \[0, 1\].
+#'     \emph{Threshold variable in Model II (institutions); predictor in
+#'     Model I (oil dependence).}}
 #'   \item{initialGDP}{Log of initial real GDP per capita in PPP (constant
 #'     international dollars).  Following Barro (2003), the initial value
 #'     retained for each five-year sub-period is that of the first year of

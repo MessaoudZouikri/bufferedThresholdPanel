@@ -179,7 +179,7 @@ install.packages("gt")
 ## Support
 
 - **GitHub Issues**: <https://github.com/MessaoudZouikri/bufferedThresholdPanel/issues>
-- **Authors**: Zouikri, Hamdi, Souam (EconomiX-CNRS, Paris Nanterre University)
+- **Authors**: Hamdi (RECITS, USTHB), Souam, Zouikri (EconomiX-CNRS, Paris Nanterre University)
 
 ---
 

@@ -6,11 +6,13 @@
 ## Requires: readxl, usethis
 ## ============================================================
 
+
 library(readxl)
 library(usethis)
 
 # ---- Read the raw Excel file -------------------------------------------- #
 raw <- read_excel("data-raw/dataset.xlsx", sheet = "data")
+
 
 # ---- Build numeric country ID (alphabetical) ---------------------------- #
 country_levels <- sort(unique(raw$id))
@@ -22,25 +24,39 @@ panel_data <- cbind(
   stringsAsFactors = FALSE
 )
 
-# ---- Enforce types ------------------------------------------------------- #
+# Fix types
 panel_data$countryId <- as.integer(panel_data$countryId)
 panel_data$year      <- as.integer(panel_data$year)
 
-# ---- Sort ---------------------------------------------------------------- #
-panel_data <- panel_data[order(panel_data$countryId, panel_data$year), ]
-rownames(panel_data) <- NULL
+# Enforce documented column order (14 columns with rle at position 6)
+panel_data <- panel_data[, c("countryId", "country", "year",
+                             "growthRate", "oilRentGDP", "rle",
+                             "initialGDP", "eci", "fdiGDP",
+                             "capFormGDP", "inflation", "popGrowth",
+                             "indVAGDP", "tradeOpenness")]
 
-# ---- Verify -------------------------------------------------------------- #
+# Verify
 stopifnot(
-  nrow(panel_data)              == 1380L,
-  length(unique(panel_data$country)) == 92L,
-  length(unique(panel_data$year))    == 15L,
-  !anyNA(panel_data)
+  nrow(panel_data)                    == 1380L,
+  ncol(panel_data)                    == 14L,
+  names(panel_data)[6]                == "rle",
+  !anyNA(panel_data),
+  is.integer(panel_data$countryId),
+  is.integer(panel_data$year)
 )
 
 cat("panel_data: N =", length(unique(panel_data$country)),
     ", T =", length(unique(panel_data$year)),
-    ", NT =", nrow(panel_data), "\n")
+    ", NT =", nrow(panel_data),
+    ", cols =", ncol(panel_data), "\n")
 
 # ---- Save as package data ----------------------------------------------- #
 usethis::use_data(panel_data, overwrite = TRUE, compress = "bzip2")
+
+
+
+
+
+
+
+
