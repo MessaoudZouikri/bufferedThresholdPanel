@@ -199,56 +199,30 @@ bptr_kable <- function(x, digits = 3, ...) {
   knitr::kable(wide, digits = digits, ...)
 }
 
-#' Launch Shiny Explorer for BPTR Models
+#' Launch the Interactive Shiny Explorer for BPTR Models
 #'
 #' @description
-#' Open an interactive Shiny application to explore the fitted model,
-#' inspect regime assignments, and visualise the threshold profile.
+#' Opens the full interactive Shiny application bundled with the package
+#' (\code{inst/app/app.R}).  The app supports data upload, model specification,
+#' sequential testing, regime visualisation, bootstrap inference, and XLSX /
+#' LaTeX export.
 #'
-#' @param x A \code{bptr} object (optional). If provided, the app is
-#'   pre-loaded with this model's results.
+#' @param ... Additional arguments passed to \code{shiny::runApp()}, such as
+#'   \code{port} or \code{launch.browser}.
 #'
 #' @return Launches a Shiny app; does not return a value.
 #' @export
-bptr_shiny <- function(x = NULL) {
-  if (!requireNamespace("shiny", quietly = TRUE)) {
-    stop("Package 'shiny' is required for bptr_shiny(). Please install it.")
-  }
+bptr_shiny <- function(...) {
+  if (!requireNamespace("shiny", quietly = TRUE))
+    stop("Package 'shiny' is required for bptr_shiny(). ",
+         "Install it with: install.packages('shiny')")
 
-  ui <- shiny::fluidPage(
-    shiny::titlePanel("Buffered Panel Threshold Regression Explorer"),
-    shiny::sidebarLayout(
-      shiny::sidebarPanel(
-        shiny::h4("Model Summary"),
-        shiny::verbatimTextOutput("model_summary")
-      ),
-      shiny::mainPanel(
-        shiny::tabsetPanel(
-          shiny::tabPanel("Coefficients",
-            shiny::tableOutput("coef_table")),
-          shiny::tabPanel("Thresholds",
-            shiny::tableOutput("thresh_table")),
-          shiny::tabPanel("Fit Statistics",
-            shiny::tableOutput("glance_table"))
-        )
-      )
-    )
-  )
+  app_dir <- system.file("app", package = "bufferedThresholdPanel")
 
-  server <- function(input, output, session) {
-    output$model_summary <- shiny::renderPrint({
-      if (!is.null(x)) print(x) else cat("No model provided.")
-    })
-    output$coef_table <- shiny::renderTable({
-      if (!is.null(x)) tidy.bptr(x) else data.frame()
-    })
-    output$thresh_table <- shiny::renderTable({
-      if (!is.null(x)) threshold_tidy(x) else data.frame()
-    })
-    output$glance_table <- shiny::renderTable({
-      if (!is.null(x)) glance.bptr(x) else data.frame()
-    })
-  }
+  if (!nzchar(app_dir) || !file.exists(file.path(app_dir, "app.R")))
+    stop("Shiny app not found. ",
+         "Reinstall the package with: ",
+         "remotes::install_github('MessaoudZouikri/bufferedThresholdPanel')")
 
-  shiny::shinyApp(ui = ui, server = server)
+  shiny::runApp(app_dir, ...)
 }

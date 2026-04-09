@@ -6,7 +6,7 @@ library(dplyr)
 library(tidyr)
 library(readr)
 library(readxl)
-library(writexl)
+if (requireNamespace("writexl", quietly = TRUE)) library(writexl)
 library(gt)
 library(bufferedThresholdPanel)
 
@@ -417,7 +417,7 @@ server <- function(input, output, session) {
       updateSelectInput(session, "time_var", selected = "year")
       updateSelectInput(session, "dep_var",  selected = "growthRate")
       updateSelectizeInput(session, "reg_vars",
-                           selected = c("eci", "initialGDP", "fdiGDP",
+                           selected = c("rle", "eci", "initialGDP", "fdiGDP",
                                         "capFormGDP", "inflation",
                                         "popGrowth", "indVAGDP",
                                         "tradeOpenness"))
@@ -436,7 +436,11 @@ server <- function(input, output, session) {
   # IMPROVEMENT: warn if threshold variable is also in regressors
   output$var_warning <- renderUI({
     req(input$q_var, input$reg_vars)
-    if (input$q_var %in% input$reg_vars)
+    # The oilRentGDP/rle pair intentionally swaps roles: when one is the
+    # threshold variable the other is a predictor — this is not a mistake.
+    valid_swap <- (input$q_var == "oilRentGDP" && "rle"        %in% input$reg_vars) ||
+                  (input$q_var == "rle"        && "oilRentGDP" %in% input$reg_vars)
+    if (!valid_swap && input$q_var %in% input$reg_vars)
       div(class = "alert alert-warning p-1 mt-1 small",
           icon("exclamation-triangle"),
           " Threshold variable is also selected as a regressor.")
@@ -1029,7 +1033,12 @@ server <- function(input, output, session) {
         sheets$SequentialTests <- test_sheet
       }
 
-      writexl::write_xlsx(sheets, path = file)
+      if (requireNamespace("writexl", quietly = TRUE)) {
+        writexl::write_xlsx(sheets, path = file)
+      } else {
+        writeLines("writexl package required for Excel export. Install with: install.packages('writexl')",
+                   con = file)
+      }
     }
   )
 

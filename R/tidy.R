@@ -23,6 +23,7 @@
 #' @importFrom broom tidy
 #' @importFrom tibble tibble
 #' @importFrom stats qt pt
+#' @method tidy bptr
 #' @export
 tidy.bptr <- function(x, conf.int = FALSE, conf.level = 0.95, ...) {
 
@@ -142,18 +143,19 @@ threshold_tidy <- function(x, conf.level = 0.95) {
 #'   \item{ssr}{Sum of squared residuals}
 #'   \item{sigma}{Residual standard error}
 #'   \item{aic_approx}{Approximate AIC}
-#'   \item{r2_within}{Within R-squared}
+#'   \item{r.squared}{Within R-squared (fraction of within-group variance explained)}
 #' }
 #'
 #' @importFrom broom glance
 #' @importFrom tibble tibble
+#' @method glance bptr
 #' @export
 glance.bptr <- function(x, ...) {
 
   n_params   <- length(x$thresholds) + length(as.vector(x$coefficients))
   aic_approx <- x$n_obs * log(x$ssr / x$n_obs) + 2 * n_params
 
-  r2_within <- if (!is.null(x$tss_within) && x$tss_within > 0) {
+  r.squared <- if (!is.null(x$tss_within) && x$tss_within > 0) {
     1 - x$ssr / x$tss_within
   } else {
     NA_real_
@@ -168,7 +170,7 @@ glance.bptr <- function(x, ...) {
     ssr          = x$ssr,
     sigma        = sqrt(x$ssr / max(1, x$df_residual)),
     aic_approx   = aic_approx,
-    r2_within    = r2_within
+    r.squared    = r.squared
   )
 }
 
@@ -185,7 +187,9 @@ glance.bptr <- function(x, ...) {
 #' @return The data with additional columns \code{.fitted}, \code{.resid},
 #'   and \code{.regime}
 #'
+#' @importFrom broom augment
 #' @importFrom tibble as_tibble
+#' @method augment bptr
 #' @export
 augment.bptr <- function(x, data = NULL, ...) {
 

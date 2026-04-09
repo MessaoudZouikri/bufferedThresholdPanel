@@ -21,7 +21,7 @@ A one-row tibble with columns:
   \item{ssr}{Sum of squared residuals}
   \item{sigma}{Residual standard error}
   \item{aic_approx}{Approximate AIC}
-  \item{r2_within}{Within R-squared}
+  \item{r.squared}{Within R-squared (fraction of within-group variance explained)}
 }
 }
 \description{

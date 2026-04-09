@@ -280,6 +280,57 @@ Hysteretic autoregressive time series models.
 *Biometrika*, 102(3), 717–723. 
 <https://doi.org/10.1093/biomet/asv017>
 
+## Citation
+
+If you use **bufferedThresholdPanel** in your research, please cite:
+
+**The R package:**
+```bibtex
+@Manual{bufferedThresholdPanel,
+  title  = {{bufferedThresholdPanel}: Buffered Panel Threshold Regression
+             with Hysteresis},
+  author = {Hamdi, Faycal and Souam, Said and Zouikri, Messaoud},
+  year   = {2025},
+  note   = {R package version 0.1.0},
+  url    = {https://github.com/MessaoudZouikri/bufferedThresholdPanel}
+}
+```
+
+**The empirical application paper:**
+```bibtex
+@Article{Hamdi2025,
+  author  = {Hamdi, Faycal and Souam, Said and Zouikri, Messaoud},
+  title   = {The heterogeneous effect of economic complexity on growth and
+             human development: {N}ew empirical evidence using buffered
+             panel threshold regression},
+  journal = {The World Economy},
+  year    = {2025},
+  volume  = {48},
+  pages   = {2561--2592},
+  doi     = {10.1111/twec.70023}
+}
+```
+
+**The methodology paper:**
+```bibtex
+@Article{Belarbi2021,
+  author  = {Belarbi, Yacine and Hamdi, Faycal and Khalfi, Abderaouf
+             and Souam, Said},
+  title   = {Growth, institutions and oil dependence: {A} buffered
+             threshold panel approach},
+  journal = {Economic Modelling},
+  year    = {2021},
+  volume  = {99},
+  pages   = {105477},
+  doi     = {10.1016/j.econmod.2021.02.018}
+}
+```
+
+To get the citation directly in R:
+```r
+citation("bufferedThresholdPanel")
+```
+
 ## License
 
 GPL (≥ 3) — see [LICENSE](LICENSE)

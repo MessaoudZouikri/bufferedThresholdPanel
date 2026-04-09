@@ -4,3 +4,5 @@
 ^\.github$
 ^README\.Rmd$
 ^\.Rbuildignore$
+^\.idea$
+^CRAN_readiness_report\.md$
