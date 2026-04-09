@@ -1,0 +1,531 @@
+---
+title: "Buffered Panel Threshold Regression with bufferedThresholdPanel"
+author: "Faycal Hamdi, Said Souam, Messaoud Zouikri"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Buffered Panel Threshold Regression with bufferedThresholdPanel}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+bibliography: references.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse  = TRUE,
+  comment   = "#>",
+  fig.width = 6,
+  fig.height = 3.5
+)
+```
+
+## Overview
+
+The **bufferedThresholdPanel** package implements the Buffered Panel Threshold
+Data (BTPD) model of @Belarbi2021 for panel data with individual fixed effects.
+It extends the classical Panel Threshold Regression (PTR) of @Hansen1999 by
+replacing a single threshold parameter with a *buffer zone* $(r_L, r_U]$.
+When the threshold variable falls inside this zone, the regime indicator keeps
+its previous value, producing a hysteresis-driven (path-dependent) transition
+between regimes.
+
+The package supports:
+
+- **Two-regime models** — one buffer zone, slope vectors $\beta_1$ and $\beta_2$
+- **Three-regime models** — two buffer zones, slope vectors $\beta_1$, $\beta_2$, $\beta_3$
+- **Classical PTR** of @Hansen1999 as a special case ($r_L = r_U$)
+- **Sequential bootstrap tests** for the number of regimes ($F_{1,2}$ and $F_{2,3}$)
+- **Parallel bootstrap** confidence intervals
+- **Publication-ready tables** in AER and Journal of Econometrics styles
+
+---
+
+## The Model
+
+### Two-regime BTPD
+
+For a balanced panel $\{Y_{it}, q_{it}, X_{it} : 1 \le i \le N, 1 \le t \le T\}$
+with individual fixed effects $\mu_i$:
+
+$$Y_{it} = \mu_i + X_{it}\beta_1 \mathbf{1}(R_{it}=1)
+         + X_{it}\beta_2 \mathbf{1}(R_{it}=2) + \varepsilon_{it}$$
+
+The regime indicator follows the hysteresis rule:
+
+$$R_{it} = \begin{cases}
+1           & q_{it} \le r_L \\
+R_{i,t-1}   & r_L < q_{it} \le r_U \quad \text{(buffer zone: inherit past regime)} \\
+2           & q_{it} > r_U
+\end{cases}$$
+
+This path-dependent mechanism — formalised in the time-series context by
+@Li2015 — means that two units with identical $q_{it}$ values may be assigned
+to different regimes depending on their history.
+
+### Three-regime BTPD
+
+With two buffer zones $(r_{L,1}, r_{U,1}]$ and $(r_{L,2}, r_{U,2}]$ satisfying
+$r_{L,1} \le r_{U,1} < r_{L,2} \le r_{U,2}$, the outcome equation becomes:
+
+$$Y_{it} = \mu_i + X_{it}\beta_1 \mathbf{1}(R_{it}=1)
+         + X_{it}\beta_2 \mathbf{1}(R_{it}=2)
+         + X_{it}\beta_3 \mathbf{1}(R_{it}=3) + \varepsilon_{it}$$
+
+The regime indicator is determined by five regions of the threshold variable:
+
+| Region | Assignment rule |
+|---|---|
+| $q_{it} \le r_{L,1}$ | Regime 1 (unambiguous) |
+| $r_{L,1} < q_{it} \le r_{U,1}$ | Buffer zone 1: stay in 1 if $R_{i,t-1}=1$, else go to 2 |
+| $r_{U,1} < q_{it} \le r_{L,2}$ | Regime 2 (unambiguous) |
+| $r_{L,2} < q_{it} \le r_{U,2}$ | Buffer zone 2: stay in 2 if $R_{i,t-1} \le 2$, else stay in 3 |
+| $q_{it} > r_{U,2}$ | Regime 3 (unambiguous) |
+
+### Estimation
+
+Fixed effects $\mu_i$ are removed by within-group demeaning.  For a given set
+of buffer-zone parameters $\gamma = (r_{L,1}, r_{U,1}, r_{L,2}, r_{U,2})$, the
+regime indicators are deterministic and the model reduces to OLS applied
+separately on each regime sub-sample (*concentrated OLS*).  The optimal
+$\hat\gamma$ is the candidate that minimises the concentrated sum of squared
+residuals over a candidate grid.  Heteroskedasticity-robust standard errors
+(HC0–HC3) are computed via the sandwich estimator.
+
+### Sequential tests
+
+Because the threshold parameter is unidentified under the null hypothesis of
+linearity, the test statistic does not follow a standard asymptotic distribution
+— a problem first analysed by @Davies1987.  Bootstrap p-values are therefore
+used throughout.
+
+1. **$F_{1,2}$**: Tests linearity against a two-regime model.
+   Bootstrap draws residuals from the *linear* null.
+2. **$F_{2,3}$**: Tests the two-regime model against a three-regime model.
+   Bootstrap draws residuals from the *two-regime* null — the key distinction
+   from $F_{1,2}$ (see @Belarbi2021, Section 2.3).
+
+---
+
+## Installation
+
+```{r install, eval=FALSE}
+# From CRAN (once published)
+install.packages("bufferedThresholdPanel")
+
+# Development version
+remotes::install_github("MessaoudZouikri/bufferedThresholdPanel")
+```
+
+```{r load}
+library(bufferedThresholdPanel)
+```
+
+---
+
+## Quick illustration with simulated data
+
+The examples below use a small simulated panel (N = 30 units, T = 10 periods,
+300 observations) so they run quickly.
+Section [Replicating Hamdi et al. (2025)](#full) below shows the exact code
+for the full `panel_data` application.
+
+```{r simulate}
+set.seed(42)
+N  <- 30   # cross-sectional units
+TT <- 10   # time periods
+
+df_sim <- data.frame(
+  id   = rep(seq_len(N), each = TT),
+  time = rep(seq_len(TT), N),
+  x1   = rnorm(N * TT),
+  x2   = rnorm(N * TT),
+  q    = rnorm(N * TT)           # threshold variable
+)
+
+# True DGP: two regimes separated at q = 0.4
+#   Regime 1 (q <= 0.4):  y = 1.5*x1 - 0.5*x2 + e
+#   Regime 2 (q >  0.4):  y = -0.5*x1 + 1.0*x2 + e
+df_sim$y <- with(df_sim,
+  ifelse(q <= 0.4,
+         1.5 * x1 - 0.5 * x2,
+        -0.5 * x1 + 1.0 * x2) + rnorm(N * TT, 0, 0.5)
+)
+```
+
+### Estimate a two-regime BTPD model
+
+```{r fit2}
+fit2 <- bptr(
+  y ~ x1 + x2,
+  data     = df_sim,
+  id       = "id",
+  time     = "time",
+  q        = "q",
+  n_thresh = 1,          # 1 threshold → 2 regimes
+  buffer   = TRUE,       # BTPD (hysteresis) transitions
+  se_type  = "HC3"
+)
+print(fit2)
+```
+
+```{r fit2_summary}
+summary(fit2)
+```
+
+### S3 extractors
+
+```{r extractors}
+# Coefficient matrix (variables × regimes)
+round(coef(fit2), 4)
+
+# Number of regimes in the fitted object
+fit2$n_regimes          # 2 for n_thresh=1; 3 for n_thresh=2
+
+# Number of observations per regime
+fit2$n_obs_regime
+
+# Within R-squared
+round(1 - fit2$ssr / fit2$tss_within, 4)
+
+# Threshold / buffer-zone boundaries  [rL, rU]
+round(fit2$thresholds, 4)
+
+# Variance-covariance matrix (block-diagonal by regime)
+round(vcov(fit2), 6)
+
+# In-sample prediction (identical to fitted values)
+head(round(predict(fit2), 4))
+```
+
+### Estimate a three-regime BTPD model
+
+```{r fit3}
+fit3 <- bptr(
+  y ~ x1 + x2,
+  data        = df_sim,
+  id          = "id",
+  time        = "time",
+  q           = "q",
+  n_thresh    = 2,        # 2 thresholds → 3 regimes
+  buffer      = TRUE,
+  grid_size_3 = 10,       # ⚠ illustration only — use >= 50 for real analyses
+  se_type     = "HC3"
+)
+summary(fit3)
+```
+
+```{r fit3_zones}
+# Confirm 3 regimes are stored
+fit3$n_regimes                               # should be 3
+cat("Buffer zone 1 : [", round(fit3$thresholds[1], 4),
+    ",", round(fit3$thresholds[2], 4), "]\n")
+cat("Buffer zone 2 : [", round(fit3$thresholds[3], 4),
+    ",", round(fit3$thresholds[4], 4), "]\n")
+cat("Regime sizes  :", paste(fit3$n_obs_regime, collapse = " / "), "\n")
+```
+
+### Classical PTR for comparison
+
+```{r fit_ptr}
+fit_ptr <- bptr(
+  y ~ x1 + x2,
+  data     = df_sim,
+  id       = "id",
+  time     = "time",
+  q        = "q",
+  n_thresh = 1,
+  buffer   = FALSE        # abrupt transition (Hansen 1999)
+)
+cat("PTR threshold :", round(fit_ptr$thresholds, 4), "\n")
+cat("BTPD zone     : [", round(fit2$thresholds, 4), "]\n")
+```
+
+---
+
+## Tidy output (broom integration)
+
+```{r tidy}
+library(broom)
+
+# Coefficient table with 95% confidence intervals
+tidy(fit2, conf.int = TRUE)
+```
+
+```{r glance}
+# Model-level fit statistics
+glance(fit2)
+```
+
+```{r threshold_tidy}
+# Threshold / buffer-zone estimates
+threshold_tidy(fit2)
+```
+
+```{r augment}
+# Add fitted values and regime classification to the data frame
+aug <- augment(fit2)
+head(aug[, c("id", "time", "q", "y", ".fitted", ".resid", ".regime")])
+```
+
+---
+
+## Diagnostic plots
+
+```{r plot1, fig.height=3.5}
+# Residuals vs fitted, coloured by regime
+plot(fit2, which = 1)
+```
+
+```{r plot2, fig.height=3.5}
+# Threshold variable with buffer-zone boundaries
+plot(fit2, which = 2)
+```
+
+---
+
+## Publication-ready tables
+
+```{r kable}
+# knitr::kable for R Markdown documents
+bptr_kable(fit2, digits = 3)
+```
+
+```{r table_aer, eval=FALSE}
+# American Economic Review style (requires gt)
+bptr_table(fit2, style = "AER", stars = TRUE,
+           title = "Two-Regime BTPD Estimation")
+
+# LaTeX export for inclusion in a paper
+bptr_latex(fit2, file = "table_btpd.tex")
+```
+
+---
+
+## Sequential tests (bootstrap — not run in vignette)
+
+The sequential tests require many bootstrap replications and take several
+minutes on a full panel dataset.  The code below shows the exact calls;
+run them interactively in an R session.
+
+**Three separate functions** implement the sequential strategy of @Belarbi2021,
+Section 2.3:
+
+- `bptr_test()` — $F_{1,2}$: tests linearity vs a 2-regime model.
+  Returns an object of class `"bptr_test"`.
+- `bptr_test_23()` — $F_{2,3}$: tests the 2-regime model vs a 3-regime model.
+  Takes a *fitted* `bptr` object (not a formula) as its first argument, and
+  returns an object of class `"bptr_test23"`.
+- `bptr_test_seq()` — runs both tests in sequence, prints step-by-step
+  progress messages to the console via `cat()`, and selects the preferred
+  number of regimes automatically.
+
+Both BTPD (`buffer = TRUE`) and classical PTR (`buffer = FALSE`) tests are
+supported.
+
+```{r seq_test, eval=FALSE}
+# ── F1,2: linearity vs 2-regime BTPD ──────────────────────────────────────
+test12 <- bptr_test(
+  y ~ x1 + x2, data = df_sim,
+  id = "id", time = "time", q = "q",
+  buffer = TRUE, n_boot = 499, seed = 42
+)
+print(test12)      # class "bptr_test"
+
+# ── F1,2 for classical PTR (buffer = FALSE) ────────────────────────────────
+test12_ptr <- bptr_test(
+  y ~ x1 + x2, data = df_sim,
+  id = "id", time = "time", q = "q",
+  buffer = FALSE, n_boot = 499, seed = 42
+)
+print(test12_ptr)
+
+# ── F2,3: 2-regime vs 3-regime (takes a fitted bptr object as H0) ──────────
+# Note: first argument is the fitted 2-regime model, NOT a formula
+test23 <- bptr_test_23(fit2, n_boot = 499, grid_size_3 = 50, seed = 42)
+print(test23)      # class "bptr_test23" — different print method from test12
+
+# ── Complete sequential procedure (F1,2 → F2,3 → model selection) ──────────
+# bptr_test_seq() prints progress via cat() as each step completes
+result_seq <- bptr_test_seq(
+  y ~ x1 + x2, data = df_sim,
+  id = "id", time = "time", q = "q",
+  buffer = TRUE, n_boot = 499, alpha = 0.10, seed = 42
+)
+print(result_seq)
+# $n_regimes_selected reports 1, 2, or 3
+# $final_model is the recommended fitted bptr object
+```
+
+---
+
+## Bootstrap confidence intervals (not run in vignette)
+
+`bptr_bootstrap()` computes percentile confidence intervals for all threshold
+and slope parameters via *within-unit residual resampling*: for each bootstrap
+replication, residuals are resampled independently within each panel unit
+(preserving cross-sectional dependence), a pseudo-outcome
+$y^* = \hat{y} + e^*$ is formed, and the model is re-estimated.
+Intervals are the empirical 2.5 % and 97.5 % quantiles of the bootstrap
+distribution.  Parallel computation is supported via the `workers` argument.
+
+```{r bootstrap_ci, eval=FALSE}
+# Residual bootstrap for the 2-regime BTPD model (parallel on all cores - 1)
+boot <- bptr_bootstrap(fit2, n_boot = 499, seed = 42)
+print(boot)
+# $ci_lower / $ci_upper: named vectors covering gamma1, gamma2,
+#   regime1_x1, regime1_x2, regime2_x1, regime2_x2
+```
+
+---
+
+## Replicating Hamdi et al. (2025) {#full}
+
+The `panel_data` dataset ships with the package: 92 countries, 2002–2016,
+1 380 observations, no missing values.  The code below replicates the
+analysis of @Hamdi2025.  Run it interactively — the sequential test and
+bootstrap steps take several minutes.
+
+```{r full_data_overview}
+data(panel_data)
+
+cat("Countries :", length(unique(panel_data$country)), "\n")
+cat("Years     :", min(panel_data$year), "–", max(panel_data$year), "\n")
+cat("Obs       :", nrow(panel_data), "\n")
+cat("Columns   :", ncol(panel_data), "\n")
+
+# Both threshold variables and the dependent variable
+summary(panel_data[, c("growthRate", "oilRentGDP", "rle", "eci")])
+```
+
+### Estimation (runs quickly)
+
+```{r full_fit2}
+# Model I: oilRentGDP as threshold, rle as predictor
+fit2_I <- bptr(
+  growthRate ~ rle + eci + initialGDP + fdiGDP + capFormGDP +
+               inflation + popGrowth + indVAGDP + tradeOpenness,
+  data     = panel_data,
+  id       = "countryId",
+  time     = "year",
+  q        = "oilRentGDP",
+  n_thresh = 1,
+  buffer   = TRUE,
+  se_type  = "HC3"
+)
+print(fit2_I)
+
+# Model II: rle as threshold, oilRentGDP as predictor
+fit2_II <- bptr(
+  growthRate ~ oilRentGDP + eci + initialGDP + fdiGDP + capFormGDP +
+               inflation + popGrowth + indVAGDP + tradeOpenness,
+  data     = panel_data,
+  id       = "countryId",
+  time     = "year",
+  q        = "rle",
+  n_thresh = 1,
+  buffer   = TRUE,
+  se_type  = "HC3"
+)
+print(fit2_II)
+```
+
+### Sequential test and 3-regime model (slow — run interactively)
+
+```{r full_seq, eval=FALSE}
+# Model I: oilRentGDP as threshold, rle as predictor
+seq_I <- bptr_test_seq(
+  growthRate ~ rle + eci + initialGDP + fdiGDP + capFormGDP +
+               inflation + popGrowth + indVAGDP + tradeOpenness,
+  data        = panel_data,
+  id          = "countryId",
+  time        = "year",
+  q           = "oilRentGDP",
+  buffer      = TRUE,
+  n_boot      = 499,
+  grid_size_3 = 50,
+  alpha       = 0.10,
+  seed        = 2025
+)
+print(seq_I)
+
+# Model II: rle as threshold, oilRentGDP as predictor
+seq_II <- bptr_test_seq(
+  growthRate ~ oilRentGDP + eci + initialGDP + fdiGDP + capFormGDP +
+               inflation + popGrowth + indVAGDP + tradeOpenness,
+  data        = panel_data,
+  id          = "countryId",
+  time        = "year",
+  q           = "rle",
+  buffer      = TRUE,
+  n_boot      = 499,
+  grid_size_3 = 50,
+  alpha       = 0.10,
+  seed        = 2025
+)
+print(seq_II)
+
+# Fine-grid three-regime estimation for the selected model(s)
+fit3_I <- bptr(
+  growthRate ~ rle + eci + initialGDP + fdiGDP + capFormGDP +
+               inflation + popGrowth + indVAGDP + tradeOpenness,
+  data        = panel_data,
+  id          = "countryId", time = "year",
+  q           = "oilRentGDP",
+  n_thresh    = 2, buffer = TRUE, grid_size_3 = 80, se_type = "HC3"
+)
+summary(fit3_I)
+
+fit3_II <- bptr(
+  growthRate ~ oilRentGDP + eci + initialGDP + fdiGDP + capFormGDP +
+               inflation + popGrowth + indVAGDP + tradeOpenness,
+  data        = panel_data,
+  id          = "countryId", time = "year",
+  q           = "rle",
+  n_thresh    = 2, buffer = TRUE, grid_size_3 = 80, se_type = "HC3"
+)
+summary(fit3_II)
+
+# Bootstrap confidence intervals
+boot_I  <- bptr_bootstrap(fit2_I,  n_boot = 499, seed = 2025)
+boot_II <- bptr_bootstrap(fit2_II, n_boot = 499, seed = 2025)
+print(boot_I); print(boot_II)
+```
+
+---
+
+## Grid resolution guide
+
+| Model | Buffer? | Grid parameter | SSR evaluations (approx.) |
+|---|---|---|---|
+| 2-regime PTR | No | `grid_size = 300` | 300 |
+| 2-regime BTPD | Yes | `grid_size = 300` | 45 000 |
+| 3-regime PTR | No | `grid_size = 300` | 45 000 |
+| 3-regime BTPD | Yes | `grid_size_3 = 50` | 260 000 |
+
+Use smaller values during exploration (`grid_size = 100`, `grid_size_3 = 20`)
+and increase to 300 / 50 (or higher) for final published results.
+
+## Citation
+
+If you use this package in published research, please cite the package and
+the two underlying methodology papers.  Running the following command inside
+R will display the full citation details:
+
+```{r citation, eval=FALSE}
+citation("bufferedThresholdPanel")
+```
+
+The three entries returned are:
+
+1. **The R package itself** — Hamdi, Souam, and Zouikri (2025), v0.1.0
+2. **The empirical application** — Hamdi, Souam, and Zouikri (2025,
+   *The World Economy*) — the paper that introduced the two-model framework
+   (Model I: `oilRentGDP` as threshold; Model II: `rle` as threshold) and
+   the `panel_data` dataset included with this package
+3. **The methodology paper** — Belarbi, Hamdi, Khalfi, and Souam (2021,
+   *Economic Modelling*) — the paper that formalised the BTPD model and
+   the sequential $F_{1,2}$ / $F_{2,3}$ bootstrap tests
+
+---
+
+## References

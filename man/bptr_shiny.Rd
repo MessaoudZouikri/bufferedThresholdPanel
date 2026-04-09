@@ -2,18 +2,20 @@
 % Please edit documentation in R/tables.R
 \name{bptr_shiny}
 \alias{bptr_shiny}
-\title{Launch Shiny Explorer for BPTR Models}
+\title{Launch the Interactive Shiny Explorer for BPTR Models}
 \usage{
-bptr_shiny(x = NULL)
+bptr_shiny(...)
 }
 \arguments{
-\item{x}{A \code{bptr} object (optional). If provided, the app is
-pre-loaded with this model's results.}
+\item{...}{Additional arguments passed to \code{shiny::runApp()}, such as
+\code{port} or \code{launch.browser}.}
 }
 \value{
 Launches a Shiny app; does not return a value.
 }
 \description{
-Open an interactive Shiny application to explore the fitted model,
-inspect regime assignments, and visualise the threshold profile.
+Opens the full interactive Shiny application bundled with the package
+(\code{inst/app/app.R}).  The app supports data upload, model specification,
+sequential testing, regime visualisation, bootstrap inference, and XLSX /
+LaTeX export.
 }

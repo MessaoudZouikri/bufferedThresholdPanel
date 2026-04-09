@@ -2,6 +2,7 @@
 % Please edit documentation in R/methods.R
 \name{bptr_test_seq}
 \alias{bptr_test_seq}
+\alias{print.bptr_test_seq}
 \title{Sequential Regime Test for BTPD/PTR Models}
 \usage{
 bptr_test_seq(
@@ -18,47 +19,77 @@ bptr_test_seq(
   alpha = 0.1,
   seed = 42
 )
+
+\method{print}{bptr_test_seq}(x, ...)
 }
 \arguments{
-\item{formula}{Model formula}
+\item{formula}{A model formula}
 
 \item{data}{Panel data frame}
 
-\item{id}{Cross-sectional identifier column}
+\item{id}{Character. Cross-sectional identifier column}
 
-\item{time}{Time identifier column}
+\item{time}{Character. Time identifier column}
 
-\item{q}{Threshold variable column}
+\item{q}{Character. Threshold variable column}
 
-\item{buffer}{Logical. Buffered model?}
+\item{buffer}{Logical. Use buffered (BTPD) model? (default \code{FALSE})}
 
 \item{n_boot}{Integer. Bootstrap replications for each test (default 299)}
 
 \item{trim}{Numeric. Trimming fraction (default 0.15)}
 
-\item{grid_size}{Integer. Grid resolution for 2-regime search (default 300)}
+\item{grid_size}{Integer. Grid resolution for the 2-regime search
+(default 300)}
 
-\item{grid_size_3}{Integer. Grid resolution for 3-regime BTPD search
-(default 50)}
+\item{grid_size_3}{Integer. Grid resolution for the 3-regime BTPD 4-D
+search (default 50)}
 
 \item{alpha}{Numeric. Significance level for the sequential decision rule
 (default 0.10)}
 
 \item{seed}{Integer. Random seed (default 42)}
+
+\item{x}{A \code{bptr_test_seq} object.}
+
+\item{...}{Additional arguments (currently ignored).}
 }
 \value{
-Object of class \code{"bptr_test_seq"} with fields:
-  \code{test_12}, \code{test_23} (NULL if F1,2 not significant),
-  \code{final_model}, \code{n_regimes_selected}, \code{alpha}
+An object of class \code{"bptr_test_seq"} with components:
+  \code{test_12} (F1,2 result), \code{test_23} (\code{NULL} if F1,2 not
+  rejected), \code{final_model} (selected \code{bptr} object),
+  \code{n_regimes_selected}, \code{alpha}
 }
 \description{
-Implements the full sequential testing strategy of Belarbi et al. (2021),
+Implements the complete sequential testing strategy of Belarbi et al. (2021),
 Section 2.3:
 \enumerate{
-  \item Test linearity vs 2-regime model (F1,2, bootstrap under linear H0)
-  \item If F1,2 is significant at \code{alpha}, test 2-regime vs 3-regime
-    (F2,3, bootstrap under 2-regime H0)
-  \item Select the preferred number of regimes based on sequential p-values
+  \item Test linearity vs two-regime model (F1,2); bootstrap under linear H0.
+  \item If F1,2 is significant at \code{alpha}, test two-regime vs
+    three-regime model (F2,3); bootstrap under two-regime H0.
+  \item The number of regimes is selected based on the sequential p-values.
 }
-The final recommended model is returned as \code{$final_model}.
+Progress is reported via \code{\link{message}} so it can be suppressed with
+\code{suppressMessages()}.  The final model (the one selected by the
+sequential procedure) is returned as \code{$final_model}.
+}
+\examples{
+\donttest{
+set.seed(3)
+n <- 30; tt <- 8
+df <- data.frame(id = rep(1:n, each = tt), time = rep(1:tt, n),
+                 x1 = rnorm(n * tt), q = rnorm(n * tt))
+df$y <- 1.5 * df$x1 + (df$q < -0.5) * 0.8 * df$x1 +
+        (df$q > 0.5) * (-1.2 * df$x1) + rnorm(n * tt, 0, 0.5)
+result <- bptr_test_seq(y ~ x1, data = df, id = "id", time = "time",
+                        q = "q", buffer = TRUE,
+                        n_boot = 49, grid_size_3 = 20)
+print(result)
+}
+}
+\references{
+Belarbi, Y., Hamdi, F., Khalfi, A., and Souam, S. (2021).
+  Growth, institutions and oil dependence: A buffered threshold panel approach.
+  \emph{Economic Modelling}, 99, 105477.
+  \doi{10.1016/j.econmod.2021.02.018}
 }

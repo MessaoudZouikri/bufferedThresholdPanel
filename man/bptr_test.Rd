@@ -2,6 +2,7 @@
 % Please edit documentation in R/methods.R
 \name{bptr_test}
 \alias{bptr_test}
+\alias{print.bptr_test}
 \title{Sup-LR Test for Threshold Existence (F1,2)}
 \usage{
 bptr_test(
@@ -16,33 +17,69 @@ bptr_test(
   grid_size = 300,
   seed = 42
 )
+
+\method{print}{bptr_test}(x, ...)
 }
 \arguments{
-\item{formula}{Model formula}
+\item{formula}{A model formula (same syntax as \code{\link{bptr}})}
 
 \item{data}{Panel data frame}
 
-\item{id}{Cross-sectional identifier column}
+\item{id}{Character. Cross-sectional identifier column}
 
-\item{time}{Time identifier column}
+\item{time}{Character. Time identifier column}
 
-\item{q}{Threshold variable column}
+\item{q}{Character. Threshold variable column}
 
-\item{buffer}{Logical. Buffered model?}
+\item{buffer}{Logical. Use buffered (BTPD) transitions? (default \code{FALSE})}
 
-\item{n_boot}{Integer. Bootstrap replications (default 299)}
+\item{n_boot}{Integer. Number of bootstrap replications (default 299)}
 
-\item{trim}{Numeric. Trimming fraction (default 0.15)}
+\item{trim}{Numeric. Trimming fraction for threshold grid (default 0.15)}
 
-\item{grid_size}{Integer. Grid resolution (default 300)}
+\item{grid_size}{Integer. Grid resolution for threshold search (default 300)}
 
-\item{seed}{Integer. Random seed (default 42)}
+\item{seed}{Integer. Random seed for reproducibility (default 42).
+Note: this call sets the global RNG state via \code{set.seed()}.}
+
+\item{x}{A \code{bptr_test} object.}
+
+\item{...}{Additional arguments (currently ignored).}
 }
 \value{
-Object of class \code{"bptr_test"}
+An object of class \code{"bptr_test"} with components:
+  \code{stat} (observed F1,2), \code{p_value} (bootstrap p-value),
+  \code{boot_stats} (bootstrap replications), \code{n_boot},
+  \code{threshold} (estimated threshold), \code{model} (fitted 2-regime
+  \code{bptr} object)
 }
 \description{
-Tests H0: linear panel model against H1: 2-regime BTPD/PTR using the
-bootstrap procedure of Belarbi et al. (2021) Algorithm 1 (bootstrap
-residuals from the linear null).
+Tests the null hypothesis of a linear panel model against the alternative of
+a two-regime buffered (or standard) threshold panel model, using the
+bootstrap procedure of Belarbi et al. (2021), Algorithm 1.  The bootstrap
+draws residuals from the \emph{linear} null model.
+}
+\details{
+The test statistic is
+\deqn{F_{1,2} = \frac{S_1 - S_2(\hat\gamma_2)}{\hat\sigma^2_2(\hat\gamma_2)}}
+where \eqn{S_1} is the within-demeaned OLS residual sum of squares and
+\eqn{S_2} is the minimum SSR of the two-regime model over the threshold grid.
+}
+\examples{
+\donttest{
+set.seed(1)
+n <- 30; tt <- 8
+df <- data.frame(id = rep(1:n, each = tt), time = rep(1:tt, n),
+                 x1 = rnorm(n * tt), q = rnorm(n * tt))
+df$y <- 1.5 * df$x1 + (df$q > 0.4) * (-1.0 * df$x1) + rnorm(n * tt, 0, 0.5)
+test12 <- bptr_test(y ~ x1, data = df, id = "id", time = "time",
+                    q = "q", n_boot = 99)
+print(test12)
+}
+}
+\references{
+Belarbi, Y., Hamdi, F., Khalfi, A., and Souam, S. (2021).
+  Growth, institutions and oil dependence: A buffered threshold panel approach.
+  \emph{Economic Modelling}, 99, 105477.
+  \doi{10.1016/j.econmod.2021.02.018}
 }

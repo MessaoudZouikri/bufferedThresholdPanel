@@ -47,20 +47,49 @@
 #'   \code{n_obs_regime}, \code{regime_classification}, plus model metadata.
 #'
 #' @examples
+#' # ── Simulated panel (small for fast execution) ───────────────
 #' set.seed(1)
-#' n <- 40; tt <- 10
+#' n <- 20; tt <- 8
 #' df <- data.frame(id=rep(1:n, each=tt), time=rep(1:tt, n),
 #'                  x1=rnorm(n*tt), x2=rnorm(n*tt), q=rnorm(n*tt))
 #' df$y <- 1.5*df$x1 - 0.8*df$x2 +
 #'         (df$q > 0.3) * (-1.2*df$x1 + 0.5*df$x2) + rnorm(n*tt, 0, 0.5)
 #'
-#' # 2-regime PTR
-#' m1 <- bptr(y ~ x1 + x2, data=df, id="id", time="time", q="q", n_thresh=1)
+#' # 2-regime PTR (abrupt transition)
+#' m1 <- bptr(y ~ x1 + x2, data=df, id="id", time="time", q="q",
+#'            n_thresh=1, grid_size=100)
 #' print(m1)
 #'
-#' # 2-regime BTPD (buffered)
+#' # 2-regime BTPD (hysteresis buffer zone)
 #' m2 <- bptr(y ~ x1 + x2, data=df, id="id", time="time", q="q",
-#'            n_thresh=1, buffer=TRUE)
+#'            n_thresh=1, buffer=TRUE, grid_size=100)
+#' summary(m2)
+#'
+#' # ── Built-in panel_data dataset ──────────────────────────────
+#' # Two empirical models follow Hamdi et al. (2025):
+#' #   Model I  — oilRentGDP as threshold, rle as predictor
+#' #   Model II — rle as threshold, oilRentGDP as predictor
+#' \donttest{
+#' data(panel_data)
+#'
+#' # Model I: oil dependence threshold
+#' fit_I <- bptr(
+#'   growthRate ~ rle + eci + initialGDP + fdiGDP + capFormGDP +
+#'                inflation + popGrowth + indVAGDP + tradeOpenness,
+#'   data = panel_data, id = "countryId", time = "year",
+#'   q = "oilRentGDP", n_thresh = 1, buffer = TRUE, se_type = "HC3"
+#' )
+#' print(fit_I)
+#'
+#' # Model II: rule of law threshold
+#' fit_II <- bptr(
+#'   growthRate ~ oilRentGDP + eci + initialGDP + fdiGDP + capFormGDP +
+#'                inflation + popGrowth + indVAGDP + tradeOpenness,
+#'   data = panel_data, id = "countryId", time = "year",
+#'   q = "rle", n_thresh = 1, buffer = TRUE, se_type = "HC3"
+#' )
+#' print(fit_II)
+#' }
 #'
 #' @importFrom stats model.frame model.matrix model.response quantile lm
 #'   residuals fitted coef

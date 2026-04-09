@@ -2,6 +2,7 @@
 % Please edit documentation in R/methods.R
 \name{bptr_test_23}
 \alias{bptr_test_23}
+\alias{print.bptr_test23}
 \title{Sup-LR Test of 2-Regime Against 3-Regime BTPD (F2,3)}
 \usage{
 bptr_test_23(
@@ -11,33 +12,61 @@ bptr_test_23(
   seed = 42L,
   workers = NULL
 )
+
+\method{print}{bptr_test23}(x, ...)
 }
 \arguments{
-\item{fit_2reg}{A fitted \code{bptr} object with \code{n_thresh = 1} (the
-2-regime model that forms H0 of this test)}
+\item{fit_2reg}{A fitted \code{bptr} object with \code{n_thresh = 1}
+representing the two-regime model (H0 of this test)}
 
-\item{n_boot}{Integer. Bootstrap replications (default 299)}
+\item{n_boot}{Integer. Number of bootstrap replications (default 299)}
 
-\item{grid_size_3}{Integer. Grid resolution for 3-regime search (default 50)}
+\item{grid_size_3}{Integer. Grid resolution for the 3-regime BTPD 4-D
+search (default 50)}
 
-\item{seed}{Integer. Random seed (default 42)}
+\item{seed}{Integer. Random seed (default 42).
+Note: sets global RNG state via \code{set.seed()}.}
 
-\item{workers}{Integer or NULL. Parallel workers (not used; kept for API
-consistency)}
+\item{workers}{Unused; kept for API consistency with \code{bptr_bootstrap}}
+
+\item{x}{A \code{bptr_test23} object.}
+
+\item{...}{Additional arguments (currently ignored).}
 }
 \value{
-Object of class \code{"bptr_test23"} with fields: \code{stat},
-  \code{p_value}, \code{boot_stats}, \code{n_boot}, \code{thresholds_2},
-  \code{thresholds_3}, \code{model_2reg}, \code{model_3reg}
+An object of class \code{"bptr_test23"} with components:
+  \code{stat}, \code{p_value}, \code{boot_stats}, \code{n_boot},
+  \code{thresholds_2}, \code{thresholds_3}, \code{model_2reg},
+  \code{model_3reg}
 }
 \description{
-Tests H0: 2-regime BTPD/PTR against H1: 3-regime BTPD/PTR.
+Tests H0: two-regime model against H1: three-regime model using the
+bootstrap procedure of Belarbi et al. (2021), Section 2.3.  The critical
+distinction from \code{\link{bptr_test}} is that bootstrap residuals are
+drawn from the \emph{two-regime} model (the alternative of the preceding
+F1,2 test, which becomes the null here), not from the linear model.
 }
 \details{
-The bootstrap critical values are obtained by resampling residuals from the
-\emph{2-regime} model (the alternative of the previous F1,2 test, which
-becomes the null here).  This is the key distinction from the F1,2 test and
-follows Belarbi et al. (2021) Section 2.3: \emph{"the bootstrap errors used
-are no longer those obtained under the null hypothesis but under the
-alternative hypothesis"}.
+The test statistic is
+\deqn{F_{2,3} = \frac{S_2(\hat\gamma_2) - S_3(\hat\gamma_3)}{\hat\sigma^2_3(\hat\gamma_3)}}
+}
+\examples{
+\donttest{
+set.seed(2)
+n <- 30; tt <- 8
+df <- data.frame(id = rep(1:n, each = tt), time = rep(1:tt, n),
+                 x1 = rnorm(n * tt), q = rnorm(n * tt))
+df$y <- 1.5 * df$x1 + (df$q < -0.5) * 0.8 * df$x1 +
+        (df$q > 0.5) * (-1.2 * df$x1) + rnorm(n * tt, 0, 0.5)
+fit2 <- bptr(y ~ x1, data = df, id = "id", time = "time",
+             q = "q", n_thresh = 1, buffer = TRUE)
+test23 <- bptr_test_23(fit2, n_boot = 49, grid_size_3 = 20)
+print(test23)
+}
+}
+\references{
+Belarbi, Y., Hamdi, F., Khalfi, A., and Souam, S. (2021).
+  Growth, institutions and oil dependence: A buffered threshold panel approach.
+  \emph{Economic Modelling}, 99, 105477.
+  \doi{10.1016/j.econmod.2021.02.018}
 }
