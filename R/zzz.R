@@ -111,7 +111,11 @@ utils::globalVariables(c(
   "regime",     # tidy output column
   "term",       # tidy output column
   "conf.low",   # optional CI column
-  "conf.high"   # optional CI column
+  "conf.high",  # optional CI column
+  "resid",      # ggplot2 aes() variable in plot.bptr
+  "obs",        # ggplot2 aes() variable in plot.bptr
+  "fitted",     # ggplot2 aes() variable in plot.bptr
+  "q"           # ggplot2 aes() variable in plot.bptr
 ))
 
 

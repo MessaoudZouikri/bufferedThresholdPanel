@@ -19,7 +19,7 @@ Description: Estimates panel data threshold regression models with one or two
     computation, and publication-ready output tables following the conventions of
     major economics journals. Includes a balanced panel dataset of 92 countries
     (2002-2016) used in Hamdi et al. (2025) <doi:10.1111/twec.70023>.
-License: GPL (>= 3)
+License: GPL (>= 3) | file LICENSE
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.3
@@ -33,8 +33,7 @@ Imports:
     tibble (>= 3.2.0),
     broom (>= 1.0.5),
     parallelly (>= 1.36.0),
-    stats,
-    methods
+    stats
 Suggests:
     cli (>= 3.6.0),
     rlang (>= 1.1.0),

@@ -1,8 +1,10 @@
 ^HELP_WORKFLOW\.md$
 ^INSTALLATION\.md$
+^CRAN_readiness_report\.md$
 ^data-raw$
 ^\.github$
 ^README\.Rmd$
 ^\.Rbuildignore$
+^Rbuildignore$
 ^\.idea$
-^CRAN_readiness_report\.md$
+^NEWS\.md$
