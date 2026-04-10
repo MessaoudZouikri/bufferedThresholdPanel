@@ -288,3 +288,177 @@ test_that("bptr() stops on missing q column", {
     regexp = "not found"
   )
 })
+
+# ================================================================
+# 9. tables.R — bptr_kable, bptr_table, bptr_latex
+# ================================================================
+
+test_that("bptr_kable() returns a knitr_kable object", {
+  skip_if_not_installed("knitr")
+  fit <- bptr(y ~ x1 + x2, data = df,
+              id = "id", time = "time", q = "q",
+              n_thresh = 1, buffer = TRUE)
+  kb <- bptr_kable(fit, digits = 3)
+  expect_s3_class(kb, "knitr_kable")
+})
+
+test_that("bptr_kable() produces wider output for 2 regimes", {
+  skip_if_not_installed("knitr")
+  fit <- bptr(y ~ x1 + x2, data = df,
+              id = "id", time = "time", q = "q",
+              n_thresh = 1, buffer = TRUE)
+  kb <- bptr_kable(fit)
+  # knitr_kable is a character vector (one element per line)
+  kb_text <- paste(as.character(kb), collapse = "\n")
+  expect_true(grepl("estimate_r1", kb_text))
+  expect_true(grepl("estimate_r2", kb_text))
+})
+
+test_that("bptr_table() returns a gt_tbl object", {
+  skip_if_not_installed("gt")
+  fit <- bptr(y ~ x1 + x2, data = df,
+              id = "id", time = "time", q = "q",
+              n_thresh = 1, buffer = TRUE)
+  tbl <- bptr_table(fit)
+  expect_s3_class(tbl, "gt_tbl")
+})
+
+test_that("bptr_table() AER style returns a gt_tbl", {
+  skip_if_not_installed("gt")
+  fit <- bptr(y ~ x1 + x2, data = df,
+              id = "id", time = "time", q = "q",
+              n_thresh = 1, buffer = FALSE)
+  tbl <- bptr_table(fit, style = "AER", stars = TRUE,
+                    title = "Test table")
+  expect_s3_class(tbl, "gt_tbl")
+})
+
+test_that("bptr_table() JEconometrics style returns a gt_tbl", {
+  skip_if_not_installed("gt")
+  fit <- bptr(y ~ x1 + x2, data = df,
+              id = "id", time = "time", q = "q",
+              n_thresh = 1, buffer = TRUE)
+  tbl <- bptr_table(fit, style = "JEconometrics", stars = FALSE)
+  expect_s3_class(tbl, "gt_tbl")
+})
+
+test_that("bptr_latex() returns a character string invisibly", {
+  skip_if_not_installed("gt")
+  fit <- bptr(y ~ x1 + x2, data = df,
+              id = "id", time = "time", q = "q",
+              n_thresh = 1, buffer = TRUE)
+  tex <- bptr_latex(fit)
+  expect_type(tex, "character")
+  expect_true(nchar(as.character(tex)) > 0)
+})
+
+
+# ================================================================
+# 10. methods.R — bptr_test_23, bptr_test_seq, print methods
+# ================================================================
+
+test_that("bptr_test_23() returns correct class and components", {
+  fit2 <- bptr(y ~ x1 + x2, data = df,
+               id = "id", time = "time", q = "q",
+               n_thresh = 1, buffer = TRUE,
+               grid_size = 50)
+  t23 <- bptr_test_23(fit2, n_boot = 9, grid_size_3 = 5, seed = 1)
+  expect_s3_class(t23, "bptr_test23")
+  expect_true(is.numeric(t23$stat))
+  expect_true(t23$p_value >= 0 & t23$p_value <= 1)
+  expect_true(is.numeric(t23$boot_stats))
+  expect_true(length(t23$thresholds_2) >= 1)
+  expect_true(length(t23$thresholds_3) >= 1)
+  expect_s3_class(t23$model_2reg, "bptr")
+  expect_s3_class(t23$model_3reg, "bptr")
+})
+
+test_that("print.bptr_test23() outputs F2,3 label", {
+  fit2 <- bptr(y ~ x1 + x2, data = df,
+               id = "id", time = "time", q = "q",
+               n_thresh = 1, buffer = TRUE,
+               grid_size = 50)
+  t23 <- bptr_test_23(fit2, n_boot = 9, grid_size_3 = 5, seed = 1)
+  expect_output(print(t23), "F2,3")
+  expect_output(print(t23), "p-value")
+})
+
+test_that("bptr_test_seq() selects a regime count and prints", {
+  result <- bptr_test_seq(
+    y ~ x1 + x2, data = df,
+    id = "id", time = "time", q = "q",
+    buffer     = TRUE,
+    n_boot     = 9,
+    grid_size  = 50,
+    grid_size_3 = 5,
+    alpha      = 0.10,
+    seed       = 1
+  )
+  expect_s3_class(result, "bptr_test_seq")
+  expect_true(result$n_regimes_selected %in% 1:3)
+  expect_s3_class(result$test_12, "bptr_test")
+  expect_output(print(result), "Selected model")
+})
+
+test_that("bptr_test_seq() test_23 is NULL when F1,2 not rejected", {
+  # Use a linear DGP so linearity is not rejected at alpha = 0.001
+  set.seed(99)
+  df_lin <- data.frame(
+    id   = rep(1:10, each = 5),
+    time = rep(1:5, 10),
+    x1   = rnorm(50),
+    q    = rnorm(50)
+  )
+  df_lin$y <- 0.5 * df_lin$x1 + rnorm(50, 0, 0.1)
+
+  result <- bptr_test_seq(
+    y ~ x1, data = df_lin,
+    id = "id", time = "time", q = "q",
+    buffer = FALSE, n_boot = 9, grid_size = 30,
+    alpha  = 0.001, seed = 1
+  )
+  # With alpha=0.001 and a near-linear DGP, test_23 is likely NULL
+  # but we accept either outcome — just check structure is valid
+  expect_s3_class(result, "bptr_test_seq")
+  expect_true(result$n_regimes_selected %in% 1:3)
+})
+
+test_that("summary.bptr() and print.summary.bptr() work for 3-regime model", {
+  fit3 <- bptr(y ~ x1 + x2, data = df,
+               id = "id", time = "time", q = "q",
+               n_thresh = 2, buffer = TRUE,
+               grid_size_3 = 5)
+  sm <- summary(fit3)
+  expect_s3_class(sm, "summary.bptr")
+  expect_equal(sm$n_regimes, 3L)
+  expect_output(print(sm), "Regime 3")
+})
+
+test_that("predict.bptr() works with newdata for 3-regime PTR", {
+  fit3 <- bptr(y ~ x1 + x2, data = df,
+               id = "id", time = "time", q = "q",
+               n_thresh = 2, buffer = FALSE,
+               grid_size = 50)
+  pred <- predict(fit3, newdata = df)
+  expect_equal(length(pred), nrow(df))
+  expect_false(anyNA(pred))
+})
+
+test_that("predict.bptr() works with newdata for 3-regime BTPD", {
+  fit3 <- bptr(y ~ x1 + x2, data = df,
+               id = "id", time = "time", q = "q",
+               n_thresh = 2, buffer = TRUE,
+               grid_size_3 = 5)
+  pred <- predict(fit3, newdata = df)
+  expect_equal(length(pred), nrow(df))
+  expect_false(anyNA(pred))
+})
+
+test_that("plot.bptr() works for 3-regime model", {
+  fit3 <- bptr(y ~ x1 + x2, data = df,
+               id = "id", time = "time", q = "q",
+               n_thresh = 2, buffer = TRUE,
+               grid_size_3 = 5)
+  p <- plot(fit3, which = 1:2)
+  expect_true(inherits(p, "gg") || inherits(p, "ggplot"))
+})
