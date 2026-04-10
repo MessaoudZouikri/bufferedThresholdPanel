@@ -228,22 +228,22 @@ the linear null), which is the null hypothesis of the second step.
 
 `panel_data` is a balanced panel of 92 countries observed from 2002 to 2016:
 
-| Column         | Description                              |
-|----------------|------------------------------------------|
-| `countryId`    | Numeric country ID (1–92)                |
-| `country`      | Country name                             |
-| `year`         | Year (2002–2016)                         |
-| `growthRate`   | Annual GDP growth rate (log difference)  |
-| `oilRentGDP`   | Oil rents as % of GDP (threshold var. Model I; predictor Model II) |
-| `rle`          | Rule of Law index (threshold var. Model II; predictor Model I)     |
-| `initialGDP`   | Log initial GDP per capita               |
-| `eci`          | Economic Complexity Index                |
-| `fdiGDP`       | FDI inflows as % of GDP                  |
-| `capFormGDP`   | Gross fixed capital formation as % GDP   |
-| `inflation`    | Inflation rate (GDP deflator)            |
-| `popGrowth`    | Population growth rate                   |
-| `indVAGDP`     | Industrial value added as % GDP          |
-| `tradeOpenness`| Trade openness (exports + imports / GDP) |
+| Column          | Description                                                         |
+|-----------------|---------------------------------------------------------------------|
+| `countryId`     | Numeric country ID (1–92)                                           |
+| `country`       | Country name                                                        |
+| `year`          | Year (2002–2016)                                                    |
+| `growthRate`    | Annual GDP growth rate (log difference)                             |
+| `oilRentGDP`    | Oil rents as % of GDP (threshold var. Model I; predictor Model II)  |
+| `rle`           | Rule of Law index (threshold var. Model II; predictor Model I)      |
+| `initialGDP`    | Log initial GDP per capita                                          |
+| `eci`           | Economic Complexity Index                                           |
+| `fdiGDP`        | FDI inflows as % of GDP                                             |
+| `capFormGDP`    | Gross fixed capital formation as % GDP                              |
+| `inflation`     | Inflation rate (GDP deflator)                                       |
+| `popGrowth`     | Population growth rate                                              |
+| `indVAGDP`      | Industrial value added as % GDP                                     |
+| `tradeOpenness` | Trade openness (exports + imports / GDP)                            |
 
 Sources: World Bank WDI; Harvard CID Atlas of Economic Complexity.
 
@@ -254,9 +254,9 @@ Growth, institutions and oil dependence: A buffered threshold panel approach.
 *Economic Modelling*, 99, 105477.
 <https://doi.org/10.1016/j.econmod.2021.02.018>
 
-Davies, R. B. (1987). 
-Hypothesis testing when a nuisance parameter is present only under the alternative. 
-*Biometrika*, 74(1), 33–43. 
+Davies, R. B. (1987).
+Hypothesis testing when a nuisance parameter is present only under the alternative.
+*Biometrika*, 74(1), 33–43.
 <https://doi.org/10.1093/biomet/74.1.33>
 
 Hamdi, F., Souam, S., and Zouikri, M. (2025).
@@ -275,9 +275,9 @@ Sample splitting and threshold estimation.
 *Econometrica*, 68(3), 575–603.
 <https://doi.org/10.2307/2669382>
 
-Li, G., Guan, B., Li, W., & Yu, P. L. H. (2015). 
-Hysteretic autoregressive time series models. 
-*Biometrika*, 102(3), 717–723. 
+Li, G., Guan, B., Li, W., & Yu, P. L. H. (2015).
+Hysteretic autoregressive time series models.
+*Biometrika*, 102(3), 717–723.
 <https://doi.org/10.1093/biomet/asv017>
 
 ## Citation
@@ -340,3 +340,33 @@ GPL (≥ 3) — see [LICENSE](LICENSE)
 - **Faycal Hamdi** — RECITS Laboratory, USTHB, Algiers
 - **Said Souam** — EconomiX-CNRS, Université Paris Nanterre
 - **Messaoud Zouikri** (maintainer) — EconomiX-CNRS, Université Paris Nanterre
+
+---
+
+## Feedback, Bug Reports & Suggestions
+
+Your feedback helps make **bufferedThresholdPanel** better for the entire
+research community. We welcome feedback from users. Whether you have found a bug, 
+have a question about the methodology, or would like to suggest an improvement, 
+we would be pleased to hear from you.
+
+**Please reach out at:**
+📧 [bufferedThresholdPanel@proton.me](mailto:bufferedThresholdPanel@proton.me)
+
+When reporting a **bug**, please include:
+
+- Your R version (`R.version.string`)
+- Your operating system
+- A minimal reproducible example (the smallest code that triggers the issue)
+- The full error message or unexpected output
+
+When suggesting an **improvement or new feature**, please describe:
+
+- The use case or research context that motivates it
+- How you would expect it to behave
+
+For **methodological questions** related to the BTPD model of
+Belarbi et al. (2021) or the sequential testing procedure, feel free
+to ask as well — we are happy to clarify.
+
+> We read every message and aim to respond within a few working days.
