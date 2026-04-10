@@ -120,7 +120,7 @@ print(test12_II)
 # Bootstrap p-value: 0.000  *** → reject linearity
 ```
 
-If the p-value exceeds your significance level (e.g. 0.10), stop here —
+If the p-value exceeds your significance level (e.g. 0.05), stop here —
 the data support a linear model.  If linearity is rejected, proceed to
 Step 2.
 
