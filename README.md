@@ -502,4 +502,3 @@ For **methodological questions** related to the BTPD model of
 Belarbi et al. (2021) or the sequential testing procedure, feel free
 to ask as well — we are happy to clarify.
 
-> We read every message and aim to respond within a few working days.
