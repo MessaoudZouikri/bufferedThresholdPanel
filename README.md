@@ -61,43 +61,176 @@ data(panel_data)
 head(panel_data)
 ```
 
-### Sequential regime test
+### Testing procedure — choosing the number of regimes
 
-The empirical application estimates two models: in **Model I** `oilRentGDP`
-is the threshold variable and `rle` is a predictor; in **Model II** the roles
-are reversed.
+Before estimating the model, you need to determine whether the data support
+one, two, or three regimes.  The package implements the **sequential bootstrap
+testing procedure** of Belarbi et al. (2021), Section 2.3.  Two tests are
+run in order:
+
+| Test | Null H₀ | Alternative H₁ | Bootstrap null |
+|------|---------|----------------|----------------|
+| **F₁,₂** | Linear model (no threshold) | 2-regime BTPD | Residuals from the linear model |
+| **F₂,₃** | 2-regime BTPD | 3-regime BTPD | Residuals from the **2-regime** model |
+
+The key distinction: `bptr_test_23()` resamples residuals from the
+**two-regime model** — not from the linear null — because that is the null
+hypothesis of the second step.  `bptr_test_seq()` runs both steps
+automatically and selects the preferred model.
+
+---
+
+#### Step 1 — Test linearity against a 2-regime BTPD model (F₁,₂)
+
+`bptr_test()` tests H₀: linear panel model against H₁: 2-regime BTPD.
+Bootstrap p-values are used because the threshold parameter is unidentified
+under the null (Davies, 1987).
 
 ```r
-# Model I — oil dependence as threshold, Rule of Law as predictor
+# Model I — is there a threshold in oilRentGDP?
+test12_I <- bptr_test(
+  growthRate ~ rle + eci + initialGDP + fdiGDP + capFormGDP +
+               inflation + popGrowth + indVAGDP + tradeOpenness,
+  data      = panel_data,
+  id        = "countryId",
+  time      = "year",
+  q         = "oilRentGDP",   # threshold variable to test
+  buffer    = TRUE,            # test BTPD (set FALSE for classical PTR)
+  n_boot    = 299,
+  seed      = 2025
+)
+print(test12_I)
+# Sup-LR statistic : 55.52
+# Bootstrap p-value: 0.002  *** → reject linearity
+
+# Model II — is there a threshold in rle?
+test12_II <- bptr_test(
+  growthRate ~ oilRentGDP + eci + initialGDP + fdiGDP + capFormGDP +
+               inflation + popGrowth + indVAGDP + tradeOpenness,
+  data      = panel_data,
+  id        = "countryId",
+  time      = "year",
+  q         = "rle",
+  buffer    = TRUE,
+  n_boot    = 299,
+  seed      = 2025
+)
+print(test12_II)
+# Sup-LR statistic : 52.65
+# Bootstrap p-value: 0.000  *** → reject linearity
+```
+
+If the p-value exceeds your significance level (e.g. 0.10), stop here —
+the data support a linear model.  If linearity is rejected, proceed to
+Step 2.
+
+---
+
+#### Step 2 — Test 2-regime against 3-regime BTPD (F₂,₃)
+
+`bptr_test_23()` takes the **fitted 2-regime model** (from `test12_I$model`)
+as its first argument.  It resamples bootstrap residuals from that 2-regime
+model — not from the linear null — which is the correct null for this step.
+
+```r
+# Model I — does oilRentGDP support 3 regimes?
+test23_I <- bptr_test_23(
+  fit_2reg    = test12_I$model,   # fitted 2-regime model from Step 1
+  n_boot      = 299,
+  grid_size_3 = 50,               # 4-D grid resolution for 3-regime search
+  seed        = 2025
+)
+print(test23_I)
+# H0 thresholds (2-regime): 0.1490  0.9584
+# H1 thresholds (3-regime): -1.0506  0.0720  0.1490  0.9584
+# Sup-LR statistic : 29.25
+# Bootstrap p-value: 0.002  *** → 3-regime model preferred
+
+# Model II — does rle support 3 regimes?
+test23_II <- bptr_test_23(
+  fit_2reg    = test12_II$model,
+  n_boot      = 299,
+  grid_size_3 = 50,
+  seed        = 2025
+)
+print(test23_II)
+# Bootstrap p-value: 0.000  *** → 3-regime model preferred
+```
+
+---
+
+#### Step 3 — Estimate the selected model
+
+Both tests rejected their respective nulls, so the three-regime BTPD model
+is preferred.  Retrieve it directly from the test object or re-estimate with
+a finer grid:
+
+```r
+# Option A — use the model already fitted inside the test object (fast)
+fit3_I  <- test23_I$model_3reg
+fit3_II <- test23_II$model_3reg
+summary(fit3_I)
+
+# Option B — re-estimate with a finer grid for publication results
+fit3_I <- bptr(
+  growthRate ~ rle + eci + initialGDP + fdiGDP + capFormGDP +
+               inflation + popGrowth + indVAGDP + tradeOpenness,
+  data        = panel_data,
+  id          = "countryId",
+  time        = "year",
+  q           = "oilRentGDP",
+  n_thresh    = 2,          # 2 thresholds → 3 regimes
+  buffer      = TRUE,
+  grid_size_3 = 80,         # finer grid for final results
+  se_type     = "HC3"
+)
+summary(fit3_I)
+```
+
+---
+
+#### Automated shortcut — run all steps at once
+
+If you do not need to inspect intermediate results, `bptr_test_seq()` runs
+Steps 1–3 automatically and prints progress at each decision point:
+
+```r
+# Model I — full sequential procedure
 result_I <- bptr_test_seq(
   growthRate ~ rle + eci + initialGDP + fdiGDP + capFormGDP +
                inflation + popGrowth + indVAGDP + tradeOpenness,
   data        = panel_data,
   id          = "countryId",
   time        = "year",
-  q           = "oilRentGDP",    # threshold variable
+  q           = "oilRentGDP",
   buffer      = TRUE,
   n_boot      = 299,
   grid_size_3 = 50,
-  alpha       = 0.10
+  alpha       = 0.10,
+  seed        = 2025
 )
 print(result_I)
+# $n_regimes_selected  → 1, 2, or 3
+# $final_model         → the recommended fitted bptr object
 
-# Model II — Rule of Law as threshold, oil dependence as predictor
+# Model II
 result_II <- bptr_test_seq(
   growthRate ~ oilRentGDP + eci + initialGDP + fdiGDP + capFormGDP +
                inflation + popGrowth + indVAGDP + tradeOpenness,
   data        = panel_data,
   id          = "countryId",
   time        = "year",
-  q           = "rle",           # threshold variable
+  q           = "rle",
   buffer      = TRUE,
   n_boot      = 299,
   grid_size_3 = 50,
-  alpha       = 0.10
+  alpha       = 0.10,
+  seed        = 2025
 )
 print(result_II)
 ```
+
+
 
 ### Direct model estimation
 
