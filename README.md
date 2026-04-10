@@ -273,7 +273,7 @@ Threshold effects in non-dynamic panels: estimation, testing, and inference.
 Hansen, B. E. (2000).
 Sample splitting and threshold estimation.
 *Econometrica*, 68(3), 575–603.
-<https://doi.org/10.2307/2669382>
+<https://doi.org/10.1111/1468-0262.00124>
 
 Li, G., Guan, B., Li, W., & Yu, P. L. H. (2015).
 Hysteretic autoregressive time series models.
