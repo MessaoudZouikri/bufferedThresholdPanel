@@ -3,7 +3,7 @@
 <!-- badges: start -->
 [![CRAN status](https://www.r-pkg.org/badges/version/bufferedThresholdPanel)](https://CRAN.R-project.org/package=bufferedThresholdPanel)
 [![R-CMD-check](https://github.com/MessaoudZouikri/bufferedThresholdPanel/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/MessaoudZouikri/bufferedThresholdPanel/actions)
-[![Codecov test coverage](https://codecov.io/gh/MessaoudZouikri/bufferedThresholdPanel/branch/main/graph/badge.svg)](https://app.codecov.io/gh/MessaoudZouikri/bufferedThresholdPanel?branch=main)
+[![Codecov test coverage](https://codecov.io/gh/MessaoudZouikri/bufferedThresholdPanel/branch/master/graph/badge.svg)](https://app.codecov.io/gh/MessaoudZouikri/bufferedThresholdPanel?branch=master)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 <!-- badges: end -->
 
