@@ -8,3 +8,5 @@
 ^Rbuildignore$
 ^\.idea$
 ^NEWS\.md$
+^.*\.Rproj$
+^\.Rproj\.user$

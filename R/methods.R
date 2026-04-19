@@ -146,7 +146,7 @@ predict.bptr <- function(object, newdata = NULL, ...) {
   if (is.null(newdata)) return(object$fitted_values)
   if (!object$q_name %in% names(newdata))
     stop(paste("Threshold variable", object$q_name, "not found in newdata"))
-  X <- stats::model.matrix(object$formula, newdata)
+  X <- stats::model.matrix(stats::delete.response(stats::terms(object$formula)), newdata)
   if ("(Intercept)" %in% colnames(X)) X <- X[, -1, drop = FALSE]
   q_new <- newdata[[object$q_name]]
   gamma <- object$thresholds

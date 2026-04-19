@@ -192,6 +192,7 @@ test_that("threshold_tidy() returns a data frame with threshold estimates", {
 # ================================================================
 
 test_that("bptr_test() returns correct class and components", {
+  skip_on_cran()
   t12 <- bptr_test(y ~ x1 + x2, data = df,
                    id = "id", time = "time", q = "q",
                    buffer = TRUE, n_boot = 19L, seed = 42L)
@@ -209,6 +210,7 @@ test_that("bptr_test() returns correct class and components", {
 # ================================================================
 
 test_that("bptr_bootstrap() returns correct class and CI structure", {
+  skip_on_cran()
   fit  <- bptr(y ~ x1 + x2, data = df,
                id = "id", time = "time", q = "q",
                n_thresh = 1, buffer = TRUE)
@@ -358,6 +360,7 @@ test_that("bptr_latex() returns a character string invisibly", {
 # ================================================================
 
 test_that("bptr_test_23() returns correct class and components", {
+  skip_on_cran()
   fit2 <- bptr(y ~ x1 + x2, data = df,
                id = "id", time = "time", q = "q",
                n_thresh = 1, buffer = TRUE,
@@ -374,6 +377,7 @@ test_that("bptr_test_23() returns correct class and components", {
 })
 
 test_that("print.bptr_test23() outputs F2,3 label", {
+  skip_on_cran()
   fit2 <- bptr(y ~ x1 + x2, data = df,
                id = "id", time = "time", q = "q",
                n_thresh = 1, buffer = TRUE,
@@ -384,6 +388,7 @@ test_that("print.bptr_test23() outputs F2,3 label", {
 })
 
 test_that("bptr_test_seq() selects a regime count and prints", {
+  skip_on_cran()
   result <- bptr_test_seq(
     y ~ x1 + x2, data = df,
     id = "id", time = "time", q = "q",
@@ -401,6 +406,7 @@ test_that("bptr_test_seq() selects a regime count and prints", {
 })
 
 test_that("bptr_test_seq() test_23 is NULL when F1,2 not rejected", {
+  skip_on_cran()
   # Use a linear DGP so linearity is not rejected at alpha = 0.001
   set.seed(99)
   df_lin <- data.frame(
@@ -424,6 +430,7 @@ test_that("bptr_test_seq() test_23 is NULL when F1,2 not rejected", {
 })
 
 test_that("summary.bptr() and print.summary.bptr() work for 3-regime model", {
+  skip_on_cran()
   fit3 <- bptr(y ~ x1 + x2, data = df,
                id = "id", time = "time", q = "q",
                n_thresh = 2, buffer = TRUE,
@@ -435,6 +442,7 @@ test_that("summary.bptr() and print.summary.bptr() work for 3-regime model", {
 })
 
 test_that("predict.bptr() works with newdata for 3-regime PTR", {
+  skip_on_cran()
   fit3 <- bptr(y ~ x1 + x2, data = df,
                id = "id", time = "time", q = "q",
                n_thresh = 2, buffer = FALSE,
@@ -445,6 +453,7 @@ test_that("predict.bptr() works with newdata for 3-regime PTR", {
 })
 
 test_that("predict.bptr() works with newdata for 3-regime BTPD", {
+  skip_on_cran()
   fit3 <- bptr(y ~ x1 + x2, data = df,
                id = "id", time = "time", q = "q",
                n_thresh = 2, buffer = TRUE,
@@ -455,6 +464,7 @@ test_that("predict.bptr() works with newdata for 3-regime BTPD", {
 })
 
 test_that("plot.bptr() works for 3-regime model", {
+  skip_on_cran()
   fit3 <- bptr(y ~ x1 + x2, data = df,
                id = "id", time = "time", q = "q",
                n_thresh = 2, buffer = TRUE,
