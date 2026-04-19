@@ -308,3 +308,152 @@ test_that("bptr() stores the call and formula on the result object", {
   expect_s3_class(fit$formula, "formula")
   expect_true(is.call(fit$call))
 })
+
+# ================================================================
+# bptr_table() — stars=FALSE, notes, style variants
+# ================================================================
+
+test_that("bptr_table() works with stars=FALSE", {
+  set.seed(90L)
+  df <- data.frame(id=rep(1:10, each=6), time=rep(1:6, 10),
+                   x1=rnorm(60), q=rnorm(60), y=rnorm(60))
+  fit <- bptr(y~x1, data=df, id="id", time="time", q="q",
+              n_thresh=1L, buffer=FALSE, grid_size=20L)
+  tbl <- bptr_table(fit, stars=FALSE)
+  expect_s3_class(tbl, "gt_tbl")
+})
+
+test_that("bptr_table() works with notes argument", {
+  set.seed(91L)
+  df <- data.frame(id=rep(1:10, each=6), time=rep(1:6, 10),
+                   x1=rnorm(60), q=rnorm(60), y=rnorm(60))
+  fit <- bptr(y~x1, data=df, id="id", time="time", q="q",
+              n_thresh=1L, buffer=FALSE, grid_size=20L)
+  tbl <- bptr_table(fit, notes="Robust standard errors (HC3).")
+  expect_s3_class(tbl, "gt_tbl")
+})
+
+test_that("bptr_table() works with style='JEconometrics'", {
+  set.seed(92L)
+  df <- data.frame(id=rep(1:10, each=6), time=rep(1:6, 10),
+                   x1=rnorm(60), q=rnorm(60), y=rnorm(60))
+  fit <- bptr(y~x1, data=df, id="id", time="time", q="q",
+              n_thresh=1L, buffer=FALSE, grid_size=20L)
+  tbl <- bptr_table(fit, style="JEconometrics")
+  expect_s3_class(tbl, "gt_tbl")
+})
+
+test_that("bptr_table() works with style='AER'", {
+  set.seed(93L)
+  df <- data.frame(id=rep(1:10, each=6), time=rep(1:6, 10),
+                   x1=rnorm(60), q=rnorm(60), y=rnorm(60))
+  fit <- bptr(y~x1, data=df, id="id", time="time", q="q",
+              n_thresh=1L, buffer=FALSE, grid_size=20L)
+  tbl <- bptr_table(fit, style="AER")
+  expect_s3_class(tbl, "gt_tbl")
+})
+
+# ================================================================
+# bptr_latex() — with and without file argument
+# ================================================================
+
+test_that("bptr_latex() returns invisibly without file argument", {
+  set.seed(94L)
+  df <- data.frame(id=rep(1:10, each=6), time=rep(1:6, 10),
+                   x1=rnorm(60), q=rnorm(60), y=rnorm(60))
+  fit <- bptr(y~x1, data=df, id="id", time="time", q="q",
+              n_thresh=1L, buffer=FALSE, grid_size=20L)
+  tex <- bptr_latex(fit)
+  expect_true(!is.null(tex))
+})
+
+test_that("bptr_latex() writes to file when file argument is given", {
+  set.seed(95L)
+  df <- data.frame(id=rep(1:10, each=6), time=rep(1:6, 10),
+                   x1=rnorm(60), q=rnorm(60), y=rnorm(60))
+  fit <- bptr(y~x1, data=df, id="id", time="time", q="q",
+              n_thresh=1L, buffer=FALSE, grid_size=20L)
+  tmp <- tempfile(fileext=".tex")
+  bptr_latex(fit, file=tmp)
+  expect_true(file.exists(tmp))
+  expect_gt(file.size(tmp), 0L)
+  unlink(tmp)
+})
+
+# ================================================================
+# bptr_kable() — basic call
+# ================================================================
+
+test_that("bptr_kable() returns a knitr_kable object", {
+  skip_if_not_installed("knitr")
+  set.seed(96L)
+  df <- data.frame(id=rep(1:10, each=6), time=rep(1:6, 10),
+                   x1=rnorm(60), q=rnorm(60), y=rnorm(60))
+  fit <- bptr(y~x1, data=df, id="id", time="time", q="q",
+              n_thresh=1L, buffer=FALSE, grid_size=20L)
+  kb <- bptr_kable(fit)
+  expect_s3_class(kb, "knitr_kable")
+})
+
+# ================================================================
+# augment.bptr() — warning when data size mismatches
+# ================================================================
+
+test_that("augment.bptr() warns when data nrow != n_obs", {
+  set.seed(97L)
+  df <- data.frame(id=rep(1:10, each=6), time=rep(1:6, 10),
+                   x1=rnorm(60), q=rnorm(60), y=rnorm(60))
+  fit <- bptr(y~x1, data=df, id="id", time="time", q="q",
+              n_thresh=1L, buffer=FALSE, grid_size=20L)
+  df_wrong <- df[1:40, ]
+  expect_warning(broom::augment(fit, data=df_wrong))
+})
+
+# ================================================================
+# augment.bptr() — error when no data available
+# ================================================================
+
+test_that("augment.bptr() errors when no data stored and none supplied", {
+  set.seed(98L)
+  df <- data.frame(id=rep(1:10, each=6), time=rep(1:6, 10),
+                   x1=rnorm(60), q=rnorm(60), y=rnorm(60))
+  fit <- bptr(y~x1, data=df, id="id", time="time", q="q",
+              n_thresh=1L, buffer=FALSE, grid_size=20L)
+  fit$data <- NULL
+  expect_error(broom::augment(fit))
+})
+
+# ================================================================
+# threshold_tidy() — bootstrap CI branch
+# ================================================================
+
+test_that("threshold_tidy() uses bootstrap CIs when bootstrap is attached", {
+  skip_on_cran()
+  set.seed(99L)
+  df <- data.frame(id=rep(1:10, each=6), time=rep(1:6, 10),
+                   x1=rnorm(60), q=rnorm(60))
+  df$y <- df$x1 + (df$q > 0.2) * (-df$x1) + rnorm(60, 0, 0.3)
+  fit  <- bptr(y~x1, data=df, id="id", time="time", q="q",
+               n_thresh=1L, buffer=FALSE, grid_size=30L)
+  boot <- bptr_bootstrap(fit, n_boot=9L, seed=1L)
+  fit$bootstrap <- boot
+  tt <- threshold_tidy(fit)
+  expect_true(tt$conf.low  <= tt$estimate + 1e-8)
+  expect_true(tt$conf.high >= tt$estimate - 1e-8)
+  expect_true(tt$conf.low  < tt$conf.high || tt$conf.low == tt$conf.high)
+})
+
+# ================================================================
+# glance.bptr() — NA r.squared when tss_within is zero/NULL
+# ================================================================
+
+test_that("glance.bptr() returns NA r.squared when tss_within is NULL", {
+  set.seed(100L)
+  df <- data.frame(id=rep(1:10, each=6), time=rep(1:6, 10),
+                   x1=rnorm(60), q=rnorm(60), y=rnorm(60))
+  fit <- bptr(y~x1, data=df, id="id", time="time", q="q",
+              n_thresh=1L, buffer=FALSE, grid_size=20L)
+  fit$tss_within <- NULL
+  gl <- broom::glance(fit)
+  expect_true(is.na(gl$r.squared))
+})
