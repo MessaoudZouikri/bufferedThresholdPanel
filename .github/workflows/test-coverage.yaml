@@ -30,7 +30,7 @@ jobs:
       - name: Generate coverage report
         run: |
           cov <- covr::package_coverage()
-          covr::cobertura(cov, filename = "coverage.xml")
+          covr::to_cobertura(cov, filename = "coverage.xml")
         shell: Rscript {0}
 
       - name: Show testthat output
