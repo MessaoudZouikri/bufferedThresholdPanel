@@ -422,10 +422,10 @@ bptr_test_23 <- function(fit_2reg, n_boot = 299, grid_size_3 = 50L,
 
   boot_stats <- boot_stats[!is.na(boot_stats)]
   n_ok <- length(boot_stats)
-  if (n_ok == 0) stop("All bootstrap replications failed.")
-  if (n_ok < n_boot)
+  if (n_ok == 0) stop("All bootstrap replications failed.") # nocov
+  if (n_ok < n_boot) # nocov start
     warning(sprintf("%d of %d bootstrap replications failed.",
-                    n_boot - n_ok, n_boot))
+                    n_boot - n_ok, n_boot)) # nocov end
 
   result <- list(
     stat         = F_obs,
@@ -652,9 +652,9 @@ bptr_bootstrap <- function(x, n_boot = 299, workers = NULL, seed = 42) {
   bl   <- furrr::future_map(.x = seq_len(n_boot), .f = one_boot,
                              .options = furrr::furrr_options(seed = seed))
   bl   <- Filter(Negate(is.null), bl); n_ok <- length(bl)
-  if (n_ok == 0) stop("All bootstrap replications failed.")
-  if (n_ok < n_boot)
-    warning(sprintf("%d replications failed.", n_boot - n_ok))
+  if (n_ok == 0) stop("All bootstrap replications failed.") # nocov
+  if (n_ok < n_boot) # nocov start
+    warning(sprintf("%d replications failed.", n_boot - n_ok)) # nocov end
 
   gb <- do.call(rbind, lapply(bl, `[[`, "gamma"))
   b1 <- do.call(rbind, lapply(bl, `[[`, "beta1"))

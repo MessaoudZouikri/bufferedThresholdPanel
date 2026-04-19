@@ -457,3 +457,101 @@ test_that("glance.bptr() returns NA r.squared when tss_within is NULL", {
   gl <- broom::glance(fit)
   expect_true(is.na(gl$r.squared))
 })
+
+# ================================================================
+# threshold_tidy() — LR-inversion CI branch
+# ================================================================
+
+test_that("threshold_tidy() uses LR-inversion CIs when lr_test and lr_grid are present", {
+  set.seed(101L)
+  df <- data.frame(id=rep(1:10, each=6), time=rep(1:6, 10),
+                   x1=rnorm(60), q=rnorm(60), y=rnorm(60))
+  fit <- bptr(y~x1, data=df, id="id", time="time", q="q",
+              n_thresh=1L, buffer=FALSE, grid_size=20L)
+  crit <- stats::qchisq(0.95, df = 1)
+  fake_lr    <- c(crit + 2, crit - 0.5, crit - 0.5, crit + 1)
+  fake_grid  <- seq(-1, 1, length.out = 4)
+  fit$lr_test    <- list(stat = 10.0)
+  fit$lr_grid    <- list(fake_lr)
+  fit$grid_points <- list(fake_grid)
+  tt <- threshold_tidy(fit)
+  expect_true(tt$conf.low  <= tt$estimate + 1e-8)
+  expect_true(tt$conf.high >= tt$estimate - 1e-8)
+  expect_true(tt$conf.low  <  tt$conf.high + 1e-8)
+})
+
+# ================================================================
+# augment.bptr() — NULL fitted_values / residuals / regime_classification
+# ================================================================
+
+test_that("augment.bptr() returns NA columns when fit internals are NULL", {
+  set.seed(102L)
+  df <- data.frame(id=rep(1:10, each=6), time=rep(1:6, 10),
+                   x1=rnorm(60), q=rnorm(60), y=rnorm(60))
+  fit <- bptr(y~x1, data=df, id="id", time="time", q="q",
+              n_thresh=1L, buffer=FALSE, grid_size=20L)
+  fit$fitted_values        <- NULL
+  fit$residuals            <- NULL
+  fit$regime_classification <- NULL
+  aug <- broom::augment(fit)
+  expect_true(all(is.na(aug$.fitted)))
+  expect_true(all(is.na(aug$.resid)))
+  expect_true(all(is.na(aug$.regime)))
+})
+
+# ================================================================
+# glance.bptr() — n_groups = NULL branch
+# ================================================================
+
+test_that("glance.bptr() returns NA for n_groups when n_groups is NULL", {
+  set.seed(103L)
+  df <- data.frame(id=rep(1:10, each=6), time=rep(1:6, 10),
+                   x1=rnorm(60), q=rnorm(60), y=rnorm(60))
+  fit <- bptr(y~x1, data=df, id="id", time="time", q="q",
+              n_thresh=1L, buffer=FALSE, grid_size=20L)
+  fit$n_groups <- NULL
+  gl <- broom::glance(fit)
+  expect_true(is.na(gl$n_groups))
+})
+
+# ================================================================
+# computeSSR() — 2-element non-buffer g_vec branch (lines 216-219)
+# ================================================================
+
+test_that("computeSSR() handles 2-element g_vec in non-buffer mode", {
+  set.seed(104L)
+  n <- 40L
+  X <- matrix(rnorm(n), ncol = 1L)
+  y <- rnorm(n)
+  q <- rnorm(n)
+  s <- computeSSR(y, X, g_vec = c(-0.5, 0.5), q_dm = q, buffer = FALSE)
+  expect_true(is.numeric(s))
+  expect_true(is.finite(s) || is.infinite(s))
+})
+
+# ================================================================
+# bptr_test_seq() — 3-regime model selection path
+# ================================================================
+
+test_that("bptr_test_seq() selects 3-regime model with a strong 3-regime DGP", {
+  skip_on_cran()
+  set.seed(201L)
+  n <- 30L; tt <- 10L
+  df <- data.frame(id  = rep(seq_len(n), each = tt),
+                   time = rep(seq_len(tt), n),
+                   x1   = rnorm(n * tt),
+                   q    = runif(n * tt, -3, 3))
+  df$y <- with(df, ifelse(q < -1,  4.0 * x1,
+                   ifelse(q >  1, -4.0 * x1, 0.0)) + rnorm(n * tt, 0, 0.05))
+  result <- suppressMessages(
+    bptr_test_seq(y ~ x1, data = df,
+                  id = "id", time = "time", q = "q",
+                  buffer = FALSE, n_boot = 29L,
+                  grid_size = 30L, grid_size_3 = 5L,
+                  alpha = 0.10, seed = 1L)
+  )
+  expect_s3_class(result, "bptr_test_seq")
+  expect_equal(result$n_regimes_selected, 3L)
+  expect_s3_class(result$test_23, "bptr_test23")
+  expect_s3_class(result$final_model, "bptr")
+})

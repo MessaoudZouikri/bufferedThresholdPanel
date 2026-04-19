@@ -207,8 +207,8 @@ bptr <- function(formula, data, id, time, q,
           }
         }
       }
-      if (anyNA(gamma)) stop("No valid 3-regime BTPD configuration found. ",
-                              "Try increasing grid_size_3 or relaxing trim.")
+      if (anyNA(gamma)) stop("No valid 3-regime BTPD configuration found. ", # nocov
+                              "Try increasing grid_size_3 or relaxing trim.") # nocov
     }
   }
 

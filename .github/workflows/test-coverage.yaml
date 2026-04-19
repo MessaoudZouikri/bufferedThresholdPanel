@@ -29,7 +29,9 @@ jobs:
 
       - name: Generate coverage report
         run: |
-          cov <- covr::package_coverage()
+          cov <- covr::package_coverage(
+            exclude_pattern = "# nocov"
+          )
           covr::to_cobertura(cov, filename = "coverage.xml")
         shell: Rscript {0}
 

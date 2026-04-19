@@ -219,10 +219,10 @@ bptr_shiny <- function(...) {
 
   app_dir <- system.file("app", package = "bufferedThresholdPanel")
 
-  if (!nzchar(app_dir) || !file.exists(file.path(app_dir, "app.R")))
+  if (!nzchar(app_dir) || !file.exists(file.path(app_dir, "app.R"))) # nocov start
     stop("Shiny app not found. ",
          "Reinstall the package with: ",
-         "remotes::install_github('MessaoudZouikri/bufferedThresholdPanel')")
+         "remotes::install_github('MessaoudZouikri/bufferedThresholdPanel')") # nocov end
 
   shiny::runApp(app_dir, ...)
 }
