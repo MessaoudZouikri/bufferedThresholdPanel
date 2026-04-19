@@ -49,7 +49,8 @@ Suggests:
     testthat (>= 3.0.0),
     knitr (>= 1.44),
     rmarkdown (>= 2.25),
-    withr (>= 2.5.0)
+    withr (>= 2.5.0),
+    covr (>= 3.6.0)
 VignetteBuilder: knitr
 URL: https://github.com/MessaoudZouikri/bufferedThresholdPanel
 BugReports: https://github.com/MessaoudZouikri/bufferedThresholdPanel/issues
