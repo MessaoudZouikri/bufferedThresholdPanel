@@ -29,20 +29,14 @@ jobs:
 
       - name: Generate coverage report
         run: |
-          covr::cobertura(
-            quiet        = FALSE,
-            file         = "coverage.xml",
-            install_path = file.path(
-              normalizePath(Sys.getenv("RUNNER_TEMP"), winslash = "/"),
-              "package"
-            )
-          )
+          cov <- covr::package_coverage()
+          covr::cobertura(cov, filename = "coverage.xml")
         shell: Rscript {0}
 
       - name: Show testthat output
         if: always()
         run: |
-          find ${{ runner.temp }}/package -name 'testthat.Rout*' -exec cat '{}' \; || true
+          find . -name 'testthat.Rout*' -exec cat '{}' \; || true
         shell: bash
 
       - name: Upload coverage to Codecov
