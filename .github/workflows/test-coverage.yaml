@@ -27,11 +27,11 @@ jobs:
           extra-packages: any::covr, any::xml2
           needs: coverage
 
-      - name: Measure coverage
+      - name: Generate coverage report
         run: |
-          covr::codecov(
-            quiet   = FALSE,
-            clean   = FALSE,
+          covr::cobertura(
+            quiet        = FALSE,
+            file         = "coverage.xml",
             install_path = file.path(
               normalizePath(Sys.getenv("RUNNER_TEMP"), winslash = "/"),
               "package"
@@ -48,5 +48,5 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.xml
           fail_ci_if_error: false
