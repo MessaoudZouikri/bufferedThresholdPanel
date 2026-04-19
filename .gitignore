@@ -1,4 +1,18 @@
+# R
 .Rproj.user
 .Rhistory
 .RData
 .Ruserdata
+*.tar.gz
+*.Rcheck/
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+
+# Node (should never be here for an R package)
+node_modules/
+package-lock.json
+package.json
