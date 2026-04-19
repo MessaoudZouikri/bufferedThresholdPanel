@@ -431,7 +431,7 @@ If you use **bufferedThresholdPanel** in your research, please cite:
 
 **The empirical application paper:**
 ```bibtex
-@Article{Hamdi2025,
+@Article{hsz2025,
   author  = {Hamdi, Faycal and Souam, Said and Zouikri, Messaoud},
   title   = {The heterogeneous effect of economic complexity on growth and
              human development: {N}ew empirical evidence using buffered
@@ -446,7 +446,7 @@ If you use **bufferedThresholdPanel** in your research, please cite:
 
 **The methodology paper:**
 ```bibtex
-@Article{Belarbi2021,
+@Article{beletal2021,
   author  = {Belarbi, Yacine and Hamdi, Faycal and Khalfi, Abderaouf
              and Souam, Said},
   title   = {Growth, institutions and oil dependence: {A} buffered
@@ -472,7 +472,7 @@ GPL (≥ 3) — see [LICENSE](LICENSE)
 
 - **Faycal Hamdi** — RECITS Laboratory, USTHB, Algiers
 - **Said Souam** — EconomiX-CNRS, Université Paris Nanterre
-- **Messaoud Zouikri** (maintainer) — EconomiX-CNRS, Université Paris Nanterre
+- **Messaoud Zouikri** (**maintainer**) — EconomiX-CNRS, Université Paris Nanterre
 
 ---
 
