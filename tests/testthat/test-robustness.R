@@ -469,8 +469,9 @@ test_that("threshold_tidy() uses LR-inversion CIs when lr_test and lr_grid are p
   fit <- bptr(y~x1, data=df, id="id", time="time", q="q",
               n_thresh=1L, buffer=FALSE, grid_size=20L)
   crit <- stats::qchisq(0.95, df = 1)
+  th         <- fit$thresholds[1]
   fake_lr    <- c(crit + 2, crit - 0.5, crit - 0.5, crit + 1)
-  fake_grid  <- seq(-1, 1, length.out = 4)
+  fake_grid  <- seq(th - 1, th + 1, length.out = 4)
   fit$lr_test    <- list(stat = 10.0)
   fit$lr_grid    <- list(fake_lr)
   fit$grid_points <- list(fake_grid)
