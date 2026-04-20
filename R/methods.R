@@ -255,7 +255,7 @@ plot.bptr <- function(x, which = 1:2, ...) {
 #'                  x1 = rnorm(n * tt), q = rnorm(n * tt))
 #' df$y <- 1.5 * df$x1 + (df$q > 0.4) * (-1.0 * df$x1) + rnorm(n * tt, 0, 0.5)
 #' test12 <- bptr_test(y ~ x1, data = df, id = "id", time = "time",
-#'                     q = "q", n_boot = 99)
+#'                     q = "q", n_boot = 99, grid_size = 50)
 #' print(test12)
 #' }
 bptr_test <- function(formula, data, id, time, q,

@@ -77,7 +77,8 @@
 #'   growthRate ~ rle + eci + initialGDP + fdiGDP + capFormGDP +
 #'                inflation + popGrowth + indVAGDP + tradeOpenness,
 #'   data = panel_data, id = "countryId", time = "year",
-#'   q = "oilRentGDP", n_thresh = 1, buffer = TRUE, se_type = "HC3"
+#'   q = "oilRentGDP", n_thresh = 1, buffer = TRUE, se_type = "HC3",
+#'   grid_size = 50   # coarse grid for illustration; use >= 300 in practice
 #' )
 #' print(fit_I)
 #'
@@ -86,7 +87,8 @@
 #'   growthRate ~ oilRentGDP + eci + initialGDP + fdiGDP + capFormGDP +
 #'                inflation + popGrowth + indVAGDP + tradeOpenness,
 #'   data = panel_data, id = "countryId", time = "year",
-#'   q = "rle", n_thresh = 1, buffer = TRUE, se_type = "HC3"
+#'   q = "rle", n_thresh = 1, buffer = TRUE, se_type = "HC3",
+#'   grid_size = 50   # coarse grid for illustration; use >= 300 in practice
 #' )
 #' print(fit_II)
 #' }
