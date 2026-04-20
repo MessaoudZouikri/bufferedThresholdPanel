@@ -5,6 +5,7 @@
 .Ruserdata
 *.tar.gz
 *.Rcheck/
+.bufferedThresholdPanel.Rproj
 
 # macOS
 .DS_Store

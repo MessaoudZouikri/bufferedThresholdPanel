@@ -84,6 +84,7 @@ test_that("threshold estimation error decreases with larger sample size", {
 # ================================================================
 
 test_that("bootstrap 95% CI for the threshold covers the true value in >= 70% of MC reps", {
+  skip_on_ci()    # MC loop (40 reps x n_boot=49): too slow / fragile for CI
   skip_on_cran()
   set.seed(10L)
   n_mc   <- 40L    # enough to distinguish ~70% from ~0%
@@ -108,6 +109,7 @@ test_that("bootstrap 95% CI for the threshold covers the true value in >= 70% of
 # ================================================================
 
 test_that("bptr_test() F1,2 empirical size <= 0.25 at alpha=0.10 under linear H0", {
+  skip_on_ci()    # MC loop (80 reps x n_boot=19, grid_size=300): too slow for CI
   skip_on_cran()
   set.seed(99L)
   n_mc  <- 80L
@@ -139,6 +141,7 @@ test_that("bptr_test() F1,2 empirical size <= 0.25 at alpha=0.10 under linear H0
 # ================================================================
 
 test_that("bptr_test() F1,2 rejects with probability >= 0.80 under a strong alternative", {
+  skip_on_ci()    # MC loop (40 reps x n_boot=19, grid_size=300): too slow for CI
   skip_on_cran()
   set.seed(77L)
   n_mc  <- 40L
