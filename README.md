@@ -19,11 +19,11 @@ with individual fixed effects.  It implements two complementary models:
 
 In the BTPD model, a buffer zone $(r_L, r_U)$ sits between two regimes.
 When the threshold variable falls inside the buffer zone, the regime indicator
-retains its previous value rather than jumping immediately.  This path-dependent
-mechanism — known as *hysteresis* and formalised in the time-series context by
-Li et al. (2015) — captures real-world phenomena such as institutional quality
-traps and natural-resource dependence, where regime transitions are gradual
-rather than instantaneous.
+retains its previous value rather than jumping immediately. This path-dependent 
+mechanism—referred to as *hysteresis* and formalised in a time-series framework 
+by Li et al. (2015)—captures real-world dynamics such as economic growth and 
+development processes shaped by institutional-quality traps and natural 
+resource dependence, in which regime transitions occur gradually rather than instantaneously.
 
 ## Key Features
 
