@@ -22,8 +22,8 @@ When the threshold variable falls inside the buffer zone, the regime indicator
 retains its previous value rather than jumping immediately. This path-dependent 
 mechanism—referred to as *hysteresis* and formalised in a time-series framework 
 by Li et al. (2015)—captures real-world dynamics such as economic growth and 
-development processes shaped by institutional-quality traps and natural 
-resource dependence, in which regime transitions occur gradually rather than instantaneously.
+development processes shaped by institutional-quality and natural 
+resource dependence traps, in which regime transitions occur gradually rather than instantaneously.
 
 ## Key Features
 
