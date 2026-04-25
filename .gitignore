@@ -6,6 +6,7 @@
 *.tar.gz
 *.Rcheck/
 .bufferedThresholdPanel.Rproj
+Rplots.pdf
 
 # macOS
 .DS_Store
