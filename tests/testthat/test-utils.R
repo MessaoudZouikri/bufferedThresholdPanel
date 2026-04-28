@@ -315,7 +315,7 @@ test_that("computeSSR() returns a finite non-negative scalar", {
   X <- matrix(rnorm(n * 2L), nrow = n, ncol = 2L)
   y <- rnorm(n)
   q <- rnorm(n)
-  s <- computeSSR(y, X, g_vec = 0.0, q_dm = q, buffer = FALSE)
+  s <- computeSSR(y, X, g_vec = 0.0, q = q, buffer = FALSE)
   expect_equal(length(s), 1L)
   expect_true(is.finite(s))
   expect_gte(s, 0)
@@ -327,7 +327,7 @@ test_that("computeSSR() returns Inf when a regime has fewer obs than regressors"
   y <- rnorm(n)
   # All q values << 0 → all obs in regime 1, regime 2 empty → Inf
   q <- rep(-10, n)
-  s <- computeSSR(y, X, g_vec = 0.0, q_dm = q, buffer = FALSE)
+  s <- computeSSR(y, X, g_vec = 0.0, q = q, buffer = FALSE)
   expect_equal(s, Inf)
 })
 
@@ -340,7 +340,7 @@ test_that("computeSSR() result is consistent with manual concentratedOLS()", {
   g    <- 0.2
   ind1 <- as.numeric(q <= g); ind2 <- 1 - ind1
   manual_ssr <- sum(concentratedOLS(y, X, ind1, ind2)$resid^2)
-  auto_ssr   <- computeSSR(y, X, g_vec = g, q_dm = q, buffer = FALSE)
+  auto_ssr   <- computeSSR(y, X, g_vec = g, q = q, buffer = FALSE)
   expect_equal(auto_ssr, manual_ssr, tolerance = 1e-10)
 })
 

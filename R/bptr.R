@@ -29,7 +29,7 @@
 #'   regimes)
 #' @param buffer Logical. Use buffered (hysteresis) transition (\code{TRUE}) or
 #'   standard abrupt transition (\code{FALSE})
-#' @param trim Numeric trimming fraction for threshold grid (default 0.15)
+#' @param trim Numeric trimming fraction for threshold grid (default 0.10)
 #' @param grid_size Integer. Grid resolution for 1-threshold / 2-regime search
 #'   (default 300)
 #' @param grid_size_3 Integer. Grid resolution for 3-regime BTPD 4-D search
@@ -100,7 +100,7 @@
 bptr <- function(formula, data, id, time, q,
                  n_thresh   = 1,
                  buffer     = FALSE,
-                 trim       = 0.15,
+                 trim       = 0.10,
                  grid_size  = 300,
                  grid_size_3 = NULL,
                  se_type    = "HC3",
@@ -133,31 +133,38 @@ bptr <- function(formula, data, id, time, q,
   y_dm <- fe$y_dm
   X_dm <- fe$X_dm
   q_var <- data[[q]]
-  q_dm  <- removeFE(q_var, matrix(1, nrow = length(q_var)), data[[id]])$y_dm
 
   id_vec  <- data[[id]]
-  q_range <- quantile(q_dm, c(trim, 1 - trim), na.rm = TRUE)
 
   # ======================================================================== #
   #  GRID SEARCH FOR OPTIMAL THRESHOLD(S)                                     #
   # ======================================================================== #
 
+  # Helper: quantile-based grid at observed q values (type=1 returns the
+  # nearest observed value, so every grid point is an actual data point and
+  # the piecewise-constant SSR minimum is always reachable).
+  make_grid <- function(n) {
+    sort(unique(as.numeric(
+      quantile(q_var, seq(trim, 1 - trim, length.out = n), type = 1L, na.rm = TRUE)
+    )))
+  }
+
   if (n_thresh == 1L) {
     # ---- 2-regime model --------------------------------------------------- #
     if (!buffer) {
       # Standard PTR: 1-D grid
-      g_grid   <- seq(q_range[1], q_range[2], length.out = grid_size)
-      ssr_grid <- sapply(g_grid, function(g) computeSSR(y_dm, X_dm, g, q_dm, FALSE))
+      g_grid   <- make_grid(grid_size)
+      ssr_grid <- sapply(g_grid, function(g) computeSSR(y_dm, X_dm, g, q_var, FALSE))
       gamma    <- g_grid[which.min(ssr_grid)]
 
     } else {
       # BTPD: 2-D grid over (rL, rU) with rL <= rU
-      g_grid   <- seq(q_range[1], q_range[2], length.out = grid_size)
+      g_grid   <- make_grid(grid_size)
       best_ssr <- Inf
-      gamma    <- c(q_range[1], q_range[2])
+      gamma    <- c(g_grid[1L], g_grid[length(g_grid)])
       for (i in seq_along(g_grid)) {
         for (j in i:length(g_grid)) {
-          s <- computeSSR(y_dm, X_dm, c(g_grid[i], g_grid[j]), q_dm, TRUE)
+          s <- computeSSR(y_dm, X_dm, c(g_grid[i], g_grid[j]), q_var, TRUE, id_vec)
           if (s < best_ssr) { best_ssr <- s; gamma <- c(g_grid[i], g_grid[j]) }
         }
       }
@@ -165,7 +172,7 @@ bptr <- function(formula, data, id, time, q,
 
   } else {
     # ---- 3-regime model --------------------------------------------------- #
-    g_grid <- seq(q_range[1], q_range[2], length.out = if (!buffer) grid_size else g3)
+    g_grid <- make_grid(if (!buffer) grid_size else g3)
     G      <- length(g_grid)
 
     if (!buffer) {
@@ -173,9 +180,9 @@ bptr <- function(formula, data, id, time, q,
       best_ssr <- Inf; gamma <- c(g_grid[1], g_grid[G])
       for (i in 1:(G - 1)) {
         for (j in (i + 1):G) {
-          i1 <- as.numeric(q_dm <= g_grid[i])
-          i2 <- as.numeric(q_dm > g_grid[i] & q_dm <= g_grid[j])
-          i3 <- as.numeric(q_dm > g_grid[j])
+          i1 <- as.numeric(q_var <= g_grid[i])
+          i2 <- as.numeric(q_var > g_grid[i] & q_var <= g_grid[j])
+          i3 <- as.numeric(q_var > g_grid[j])
           if (sum(i1) < n_vars || sum(i2) < n_vars || sum(i3) < n_vars) next
           s <- sum(concentratedOLS3(y_dm, X_dm, i1, i2, i3)$resid^2)
           if (s < best_ssr) { best_ssr <- s; gamma <- c(g_grid[i], g_grid[j]) }
@@ -195,7 +202,7 @@ bptr <- function(formula, data, id, time, q,
             rL2 <- g_grid[i3]
             for (i4 in i3:G) {
               rU2 <- g_grid[i4]
-              d   <- buildBufferIndicators3(q_dm, rL1, rU1, rL2, rU2, id_vec)
+              d   <- buildBufferIndicators3(q_var, rL1, rU1, rL2, rU2, id_vec)
               i1v <- as.numeric(d == 1L)
               i2v <- as.numeric(d == 2L)
               i3v <- as.numeric(d == 3L)
@@ -222,20 +229,20 @@ bptr <- function(formula, data, id, time, q,
 
   if (n_thresh == 1L) {
     if (!buffer) {
-      ind1 <- buildIndicators(q_dm, gamma); ind2 <- 1 - ind1
+      ind1 <- buildIndicators(q_var, gamma); ind2 <- 1 - ind1
     } else {
-      buf  <- buildBufferIndicators(q_dm, gamma[1], gamma[2], NULL, id_vec)
+      buf  <- buildBufferIndicators(q_var, gamma[1], gamma[2], NULL, id_vec)
       ind2 <- buf; ind1 <- 1 - buf
     }
     regime_classification <- ifelse(ind1 == 1, 1L, 2L)
 
   } else {
     if (!buffer) {
-      ind1 <- as.numeric(q_dm <= gamma[1])
-      ind2 <- as.numeric(q_dm > gamma[1] & q_dm <= gamma[2])
-      ind3 <- as.numeric(q_dm > gamma[2])
+      ind1 <- as.numeric(q_var <= gamma[1])
+      ind2 <- as.numeric(q_var > gamma[1] & q_var <= gamma[2])
+      ind3 <- as.numeric(q_var > gamma[2])
     } else {
-      d    <- buildBufferIndicators3(q_dm, gamma[1], gamma[2], gamma[3], gamma[4], id_vec)
+      d    <- buildBufferIndicators3(q_var, gamma[1], gamma[2], gamma[3], gamma[4], id_vec)
       ind1 <- as.numeric(d == 1L)
       ind2 <- as.numeric(d == 2L)
       ind3 <- as.numeric(d == 3L)

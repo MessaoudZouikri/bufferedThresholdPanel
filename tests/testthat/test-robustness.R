@@ -525,7 +525,7 @@ test_that("computeSSR() handles 2-element g_vec in non-buffer mode", {
   X <- matrix(rnorm(n), ncol = 1L)
   y <- rnorm(n)
   q <- rnorm(n)
-  s <- computeSSR(y, X, g_vec = c(-0.5, 0.5), q_dm = q, buffer = FALSE)
+  s <- computeSSR(y, X, g_vec = c(-0.5, 0.5), q = q, buffer = FALSE)
   expect_true(is.numeric(s))
   expect_true(is.finite(s) || is.infinite(s))
 })

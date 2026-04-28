@@ -165,7 +165,7 @@ test_that("computeSSR() equals sum(concentratedOLS()$resid^2) for multiple thres
   for (g in c(-1.0, -0.5, 0.0, 0.5, 1.0)) {
     ind1 <- buildIndicators(q, g); ind2 <- 1 - ind1
     manual <- sum(concentratedOLS(y, X, ind1, ind2)$resid^2)
-    auto   <- computeSSR(y, X, g_vec = g, q_dm = q, buffer = FALSE)
+    auto   <- computeSSR(y, X, g_vec = g, q = q, buffer = FALSE)
     expect_equal(auto, manual, tolerance = 1e-12,
                  label = sprintf("computeSSR == manual at gamma = %.1f", g))
   }
@@ -213,7 +213,7 @@ test_that("removeFE() is idempotent: applying twice equals applying once", {
 # 11. PTR regime assignment — exact correspondence with indicator
 # ================================================================
 
-test_that("PTR regime_classification exactly matches q_dm <= gamma", {
+test_that("PTR regime_classification exactly matches q <= gamma", {
   set.seed(11L)
   N <- 15L; TT <- 6L
   df <- data.frame(id = rep(seq_len(N), each = TT),
@@ -223,12 +223,11 @@ test_that("PTR regime_classification exactly matches q_dm <= gamma", {
   fit   <- bptr(y ~ x1, data = df, id = "id", time = "time", q = "q",
                 n_thresh = 1L, buffer = FALSE, grid_size = 30L)
   gamma <- fit$thresholds  # single value for PTR
-  q_dm  <- removeFE(df$q, matrix(1, nrow = nrow(df)), df$id)$y_dm
   rc    <- fit$regime_classification
-  expect_true(all(rc[q_dm <= gamma] == 1L),
-              label = "q_dm <= gamma → regime 1")
-  expect_true(all(rc[q_dm  > gamma] == 2L),
-              label = "q_dm > gamma → regime 2")
+  expect_true(all(rc[df$q <= gamma] == 1L),
+              label = "q <= gamma → regime 1")
+  expect_true(all(rc[df$q  > gamma] == 2L),
+              label = "q > gamma → regime 2")
 })
 
 # ================================================================
@@ -402,9 +401,8 @@ test_that("BTPD buffer zone: observations inside (g1, g2] keep previous regime",
   fit  <- bptr(y ~ x1, data = df, id = "id", time = "time", q = "q",
                n_thresh = 1L, buffer = TRUE, grid_size = 30L)
   g1   <- fit$thresholds[1]; g2 <- fit$thresholds[2]
-  q_dm <- removeFE(df$q, matrix(1, nrow = nrow(df)), df$id)$y_dm
   rc   <- fit$regime_classification
-  in_buf <- which(q_dm > g1 & q_dm <= g2)
+  in_buf <- which(df$q > g1 & df$q <= g2)
   # For each buffer-zone observation (after the first in its unit),
   # regime must equal the previous observation's regime within the same unit
   for (pos in in_buf) {

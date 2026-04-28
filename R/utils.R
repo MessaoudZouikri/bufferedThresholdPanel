@@ -204,28 +204,25 @@ concentratedOLS3 <- function(y_dm, X_dm, ind1, ind2, ind3) {
 #' @param y_dm Demeaned dependent variable
 #' @param X_dm Demeaned explanatory variables
 #' @param g_vec Scalar or two-element vector of threshold candidate(s)
-#' @param q_dm Demeaned threshold variable
+#' @param q Threshold variable (original, not demeaned)
 #' @param buffer Logical
+#' @param id Panel identifiers (required when \code{buffer = TRUE})
 #' @return Numeric SSR (Inf if any regime is too small)
 #' @export
-computeSSR <- function(y_dm, X_dm, g_vec, q_dm, buffer = FALSE) {
+computeSSR <- function(y_dm, X_dm, g_vec, q, buffer = FALSE, id = NULL) {
   if (!buffer) {
     if (length(g_vec) == 1L) {
-      ind1 <- buildIndicators(q_dm, g_vec); ind2 <- 1 - ind1
+      ind1 <- buildIndicators(q, g_vec); ind2 <- 1 - ind1
     } else {
-      ind1 <- as.numeric(q_dm <= g_vec[1])
-      ind2 <- as.numeric(q_dm > g_vec[1] & q_dm <= g_vec[2])
-      ind3 <- as.numeric(q_dm > g_vec[2])
+      ind1 <- as.numeric(q <= g_vec[1])
+      ind2 <- as.numeric(q > g_vec[1] & q <= g_vec[2])
+      ind3 <- as.numeric(q > g_vec[2])
       ind1 <- ind1 + ind2; ind2 <- ind3
     }
   } else {
     g1 <- g_vec[1]; g2 <- g_vec[2]
-    ind1 <- as.numeric(q_dm <= g1); ind2 <- as.numeric(q_dm > g2)
-    mid  <- which(q_dm > g1 & q_dm <= g2)
-    if (length(mid) > 0) {
-      ma <- as.numeric(q_dm[mid] > (g1 + g2) / 2)
-      ind1[mid] <- 1 - ma; ind2[mid] <- ma
-    }
+    buf  <- buildBufferIndicators(q, g1, g2, NULL, id)
+    ind2 <- buf; ind1 <- 1 - buf
   }
   nv <- ncol(X_dm)
   if (sum(ind1) < nv || sum(ind2) < nv) return(Inf)

@@ -27,13 +27,15 @@ df_dgp <- make_dgp()
 # ================================================================
 
 test_that("PTR grid search SSR is <= SSR evaluated at the true threshold", {
+  # grid_size > N*T ensures make_grid() collapses to all distinct observed
+  # values (via unique()), so the grid covers every interval including the
+  # one that contains the true threshold 0.3.
   fit <- bptr(y ~ x1, data = df_dgp,
               id = "id", time = "time", q = "q",
-              n_thresh = 1, buffer = FALSE, grid_size = 200)
+              n_thresh = 1, buffer = FALSE, grid_size = 500)
 
   fe    <- removeFE(df_dgp$y, matrix(df_dgp$x1, ncol = 1L), df_dgp$id)
-  q_fe  <- removeFE(df_dgp$q, matrix(1, nrow = nrow(df_dgp)), df_dgp$id)
-  ssr_true <- computeSSR(fe$y_dm, fe$X_dm, g_vec = 0.3, q_dm = q_fe$y_dm,
+  ssr_true <- computeSSR(fe$y_dm, fe$X_dm, g_vec = 0.3, q = df_dgp$q,
                           buffer = FALSE)
 
   expect_lte(fit$ssr, ssr_true + 1e-8)
