@@ -13,10 +13,10 @@ bptr_test_seq(
   q,
   buffer = FALSE,
   n_boot = 299,
-  trim = 0.15,
+  trim = 0.1,
   grid_size = 300,
   grid_size_3 = 50L,
-  alpha = 0.1,
+  alpha = 0.05,
   seed = 42
 )
 
@@ -37,7 +37,8 @@ bptr_test_seq(
 
 \item{n_boot}{Integer. Bootstrap replications for each test (default 299)}
 
-\item{trim}{Numeric. Trimming fraction (default 0.15)}
+\item{trim}{Numeric. Trimming fraction (default 0.10, i.e. 10\%--90\% range,
+following Hansen (1999))}
 
 \item{grid_size}{Integer. Grid resolution for the 2-regime search
 (default 300)}
@@ -46,7 +47,7 @@ bptr_test_seq(
 search (default 50)}
 
 \item{alpha}{Numeric. Significance level for the sequential decision rule
-(default 0.10)}
+(default 0.05, the standard econometric convention)}
 
 \item{seed}{Integer. Random seed (default 42)}
 

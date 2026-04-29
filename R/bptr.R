@@ -29,7 +29,8 @@
 #'   regimes)
 #' @param buffer Logical. Use buffered (hysteresis) transition (\code{TRUE}) or
 #'   standard abrupt transition (\code{FALSE})
-#' @param trim Numeric trimming fraction for threshold grid (default 0.10)
+#' @param trim Numeric trimming fraction for threshold grid (default 0.10,
+#'   i.e. 10\%--90\% range, following Hansen (1999))
 #' @param grid_size Integer. Grid resolution for 1-threshold / 2-regime search
 #'   (default 300)
 #' @param grid_size_3 Integer. Grid resolution for 3-regime BTPD 4-D search

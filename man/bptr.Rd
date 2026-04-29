@@ -22,7 +22,7 @@ bptr(
   q,
   n_thresh = 1,
   buffer = FALSE,
-  trim = 0.15,
+  trim = 0.1,
   grid_size = 300,
   grid_size_3 = NULL,
   se_type = "HC3",
@@ -67,7 +67,8 @@ regimes)}
 \item{buffer}{Logical. Use buffered (hysteresis) transition (\code{TRUE}) or
 standard abrupt transition (\code{FALSE})}
 
-\item{trim}{Numeric trimming fraction for threshold grid (default 0.15)}
+\item{trim}{Numeric trimming fraction for threshold grid (default 0.10,
+i.e. 10\%--90\% range, following Hansen (1999))}
 
 \item{grid_size}{Integer. Grid resolution for 1-threshold / 2-regime search
 (default 300)}
@@ -158,7 +159,8 @@ fit_I <- bptr(
   growthRate ~ rle + eci + initialGDP + fdiGDP + capFormGDP +
                inflation + popGrowth + indVAGDP + tradeOpenness,
   data = panel_data, id = "countryId", time = "year",
-  q = "oilRentGDP", n_thresh = 1, buffer = TRUE, se_type = "HC3"
+  q = "oilRentGDP", n_thresh = 1, buffer = TRUE, se_type = "HC3",
+  grid_size = 50   # coarse grid for illustration; use >= 300 in practice
 )
 print(fit_I)
 
@@ -167,7 +169,8 @@ fit_II <- bptr(
   growthRate ~ oilRentGDP + eci + initialGDP + fdiGDP + capFormGDP +
                inflation + popGrowth + indVAGDP + tradeOpenness,
   data = panel_data, id = "countryId", time = "year",
-  q = "rle", n_thresh = 1, buffer = TRUE, se_type = "HC3"
+  q = "rle", n_thresh = 1, buffer = TRUE, se_type = "HC3",
+  grid_size = 50   # coarse grid for illustration; use >= 300 in practice
 )
 print(fit_II)
 }

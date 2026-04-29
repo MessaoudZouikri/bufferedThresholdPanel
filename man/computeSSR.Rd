@@ -4,7 +4,7 @@
 \alias{computeSSR}
 \title{Compute SSR for 2-Regime Grid Search}
 \usage{
-computeSSR(y_dm, X_dm, g_vec, q_dm, buffer = FALSE)
+computeSSR(y_dm, X_dm, g_vec, q, buffer = FALSE, id = NULL)
 }
 \arguments{
 \item{y_dm}{Demeaned dependent variable}
@@ -13,9 +13,11 @@ computeSSR(y_dm, X_dm, g_vec, q_dm, buffer = FALSE)
 
 \item{g_vec}{Scalar or two-element vector of threshold candidate(s)}
 
-\item{q_dm}{Demeaned threshold variable}
+\item{q}{Threshold variable (original, not demeaned)}
 
 \item{buffer}{Logical}
+
+\item{id}{Panel identifiers (required when \code{buffer = TRUE})}
 }
 \value{
 Numeric SSR (Inf if any regime is too small)

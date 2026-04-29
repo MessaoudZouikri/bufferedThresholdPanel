@@ -231,7 +231,8 @@ plot.bptr <- function(x, which = 1:2, ...) {
 #' @param q Character. Threshold variable column
 #' @param buffer Logical. Use buffered (BTPD) transitions? (default \code{FALSE})
 #' @param n_boot Integer. Number of bootstrap replications (default 299)
-#' @param trim Numeric. Trimming fraction for threshold grid (default 0.15)
+#' @param trim Numeric. Trimming fraction for threshold grid (default 0.10,
+#'   i.e. 10\%--90\% range, following Hansen (1999))
 #' @param grid_size Integer. Grid resolution for threshold search (default 300)
 #' @param seed Integer. Random seed for reproducibility (default 42).
 #'   Note: this call sets the global RNG state via \code{set.seed()}.
@@ -260,7 +261,7 @@ plot.bptr <- function(x, which = 1:2, ...) {
 #' }
 bptr_test <- function(formula, data, id, time, q,
                       buffer = FALSE, n_boot = 299,
-                      trim = 0.15, grid_size = 300, seed = 42) {
+                      trim = 0.10, grid_size = 300, seed = 42) {
   set.seed(seed)
   validatePanel(data, id, time)
 
@@ -487,13 +488,14 @@ print.bptr_test23 <- function(x, ...) {
 #' @param q Character. Threshold variable column
 #' @param buffer Logical. Use buffered (BTPD) model? (default \code{FALSE})
 #' @param n_boot Integer. Bootstrap replications for each test (default 299)
-#' @param trim Numeric. Trimming fraction (default 0.15)
+#' @param trim Numeric. Trimming fraction (default 0.10, i.e. 10\%--90\% range,
+#'   following Hansen (1999))
 #' @param grid_size Integer. Grid resolution for the 2-regime search
 #'   (default 300)
 #' @param grid_size_3 Integer. Grid resolution for the 3-regime BTPD 4-D
 #'   search (default 50)
 #' @param alpha Numeric. Significance level for the sequential decision rule
-#'   (default 0.10)
+#'   (default 0.05, the standard econometric convention)
 #' @param seed Integer. Random seed (default 42)
 #' @return An object of class \code{"bptr_test_seq"} with components:
 #'   \code{test_12} (F1,2 result), \code{test_23} (\code{NULL} if F1,2 not
@@ -521,10 +523,10 @@ print.bptr_test23 <- function(x, ...) {
 bptr_test_seq <- function(formula, data, id, time, q,
                            buffer      = FALSE,
                            n_boot      = 299,
-                           trim        = 0.15,
+                           trim        = 0.10,
                            grid_size   = 300,
                            grid_size_3 = 50L,
-                           alpha       = 0.10,
+                           alpha       = 0.05,
                            seed        = 42) {
 
   message("Step 1: Testing linearity vs 2-regime model (F1,2)...")

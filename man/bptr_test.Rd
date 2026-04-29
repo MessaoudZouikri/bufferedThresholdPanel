@@ -13,7 +13,7 @@ bptr_test(
   q,
   buffer = FALSE,
   n_boot = 299,
-  trim = 0.15,
+  trim = 0.1,
   grid_size = 300,
   seed = 42
 )
@@ -35,7 +35,8 @@ bptr_test(
 
 \item{n_boot}{Integer. Number of bootstrap replications (default 299)}
 
-\item{trim}{Numeric. Trimming fraction for threshold grid (default 0.15)}
+\item{trim}{Numeric. Trimming fraction for threshold grid (default 0.10,
+i.e. 10\%--90\% range, following Hansen (1999))}
 
 \item{grid_size}{Integer. Grid resolution for threshold search (default 300)}
 
@@ -73,7 +74,7 @@ df <- data.frame(id = rep(1:n, each = tt), time = rep(1:tt, n),
                  x1 = rnorm(n * tt), q = rnorm(n * tt))
 df$y <- 1.5 * df$x1 + (df$q > 0.4) * (-1.0 * df$x1) + rnorm(n * tt, 0, 0.5)
 test12 <- bptr_test(y ~ x1, data = df, id = "id", time = "time",
-                    q = "q", n_boot = 99)
+                    q = "q", n_boot = 99, grid_size = 50)
 print(test12)
 }
 }
