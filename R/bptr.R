@@ -13,10 +13,13 @@
 #'     for BTPD: rL1, rU1, rL2, rU2 with rL1 <= rU1 < rL2 <= rU2)
 #' }
 #'
-#' \strong{Grid search computational note:} For the 3-regime BTPD the search is
-#' over a 4-dimensional parameter space. The grid resolution is automatically
-#' capped at \code{min(grid_size, 50)} for this case to keep computation
-#' feasible (~260 k candidate models at 50 points).  Use \code{grid_size_3} to
+#' \strong{Grid search computational note:} For 2-regime models (PTR and BTPD)
+#' and the 3-regime PTR, the default is an exhaustive search over all unique
+#' observed values of the threshold variable within the trimming range — the
+#' only positions where the concentrated SSR can change (piecewise-constant
+#' property).  For the 3-regime BTPD the search spans a 4-dimensional parameter
+#' space; the grid is capped at 50 observed-value quantiles by default to keep
+#' computation feasible (~260 k candidate models).  Use \code{grid_size_3} to
 #' override.
 #'
 #' @param formula A formula for the model (no intercept needed; fixed effects
@@ -31,19 +34,25 @@
 #'   standard abrupt transition (\code{FALSE})
 #' @param trim Numeric trimming fraction for threshold grid (default 0.10,
 #'   i.e. 10\%--90\% range, following Hansen (1999))
-#' @param grid_size Integer. Grid resolution for 1-threshold / 2-regime search
-#'   (default 300)
-#' @param grid_size_3 Integer. Grid resolution for 3-regime BTPD 4-D search
-#'   (default \code{min(grid_size, 50)}). Increase for finer search at the
-#'   cost of computation time
+#' @param grid_size Integer or \code{NULL}. Optional cap on the number of grid
+#'   points for the 1-threshold search and the 3-regime PTR search.
+#'   \code{NULL} (default) performs an exhaustive search over all unique
+#'   observed values in the trimming range — the theoretically correct approach
+#'   following the piecewise-constant SSR property of threshold models.
+#'   Pass an integer to cap the search (useful in bootstrap loops or for quick
+#'   illustration).
+#' @param grid_size_3 Integer or \code{NULL}. Number of observed-value grid
+#'   points for the 3-regime BTPD 4-D search (default 50). Increase for a
+#'   finer search at the cost of computation time.
 #' @param se_type Character. Robust SE type: "HC0", "HC1", "HC2", or "HC3"
 #' @param ... Additional arguments (ignored)
 #'
 #' @return An object of class \code{"bptr"} — a named list containing:
-#'   \code{gamma}, \code{thresholds}, \code{n_regimes}, \code{n_thresh},
+#'   \code{thresholds}, \code{n_regimes}, \code{n_thresh},
 #'   \code{beta1}, \code{beta2}, \code{beta3} (3-regime only),
 #'   \code{coefficients} (p x K matrix), \code{std_errors} (p x K matrix),
-#'   \code{fitted}, \code{fitted_values}, \code{residuals}, \code{ssr},
+#'   \code{vcov_regime} (list of per-regime sandwich variance matrices),
+#'   \code{fitted_values}, \code{residuals}, \code{ssr},
 #'   \code{tss_within}, \code{df_residual}, \code{n_obs}, \code{n_groups},
 #'   \code{n_obs_regime}, \code{regime_classification}, plus model metadata.
 #'
@@ -79,7 +88,7 @@
 #'                inflation + popGrowth + indVAGDP + tradeOpenness,
 #'   data = panel_data, id = "countryId", time = "year",
 #'   q = "oilRentGDP", n_thresh = 1, buffer = TRUE, se_type = "HC3",
-#'   grid_size = 50   # coarse grid for illustration; use >= 300 in practice
+#'   grid_size = 50   # cap at 50 points for speed; omit for exhaustive search
 #' )
 #' print(fit_I)
 #'
@@ -89,7 +98,7 @@
 #'                inflation + popGrowth + indVAGDP + tradeOpenness,
 #'   data = panel_data, id = "countryId", time = "year",
 #'   q = "rle", n_thresh = 1, buffer = TRUE, se_type = "HC3",
-#'   grid_size = 50   # coarse grid for illustration; use >= 300 in practice
+#'   grid_size = 50   # cap at 50 points for speed; omit for exhaustive search
 #' )
 #' print(fit_II)
 #' }
@@ -102,7 +111,7 @@ bptr <- function(formula, data, id, time, q,
                  n_thresh   = 1,
                  buffer     = FALSE,
                  trim       = 0.10,
-                 grid_size  = 300,
+                 grid_size  = NULL,
                  grid_size_3 = NULL,
                  se_type    = "HC3",
                  ...) {
@@ -116,7 +125,17 @@ bptr <- function(formula, data, id, time, q,
   if (trim <= 0 || trim >= 0.5)      stop("'trim' must be between 0 and 0.5")
   if (!q %in% names(data))           stop(paste("Threshold variable", q, "not found in data"))
 
-  g3 <- if (is.null(grid_size_3)) min(as.integer(grid_size), 50L) else as.integer(grid_size_3)
+  g3 <- if (!is.null(grid_size_3)) {
+    as.integer(grid_size_3)
+  } else if (!is.null(grid_size)) {
+    gs <- as.integer(grid_size)
+    if (gs > 50L)
+      warning("'grid_size' > 50 is capped at 50 for the 3-regime BTPD search; ",
+              "use 'grid_size_3' to set a finer grid.")
+    min(gs, 50L)
+  } else {
+    50L
+  }
 
   # ---- Panel structure ---------------------------------------------------- #
   panel_info <- validatePanel(data, id, time)
@@ -141,13 +160,19 @@ bptr <- function(formula, data, id, time, q,
   #  GRID SEARCH FOR OPTIMAL THRESHOLD(S)                                     #
   # ======================================================================== #
 
-  # Helper: quantile-based grid at observed q values (type=1 returns the
-  # nearest observed value, so every grid point is an actual data point and
-  # the piecewise-constant SSR minimum is always reachable).
-  make_grid <- function(n) {
-    sort(unique(as.numeric(
-      quantile(q_var, seq(trim, 1 - trim, length.out = n), type = 1L, na.rm = TRUE)
-    )))
+  # Helper: exhaustive grid — all unique observed values of q in [q_trim_lo, q_trim_hi].
+  # The SSR is piecewise-constant and can only change at observed q values, so
+  # this guarantees reaching the global minimum without imposing a grid size.
+  make_grid <- function(n = NULL) {
+    q_lo <- as.numeric(quantile(q_var, trim,     type = 7L, na.rm = TRUE))
+    q_hi <- as.numeric(quantile(q_var, 1 - trim, type = 7L, na.rm = TRUE))
+    g    <- sort(unique(q_var[q_var >= q_lo & q_var <= q_hi]))
+    if (!is.null(n) && length(g) > n) {
+      idx <- unique(round(seq(1L, length(g), length.out = as.integer(n))))
+      g[idx]
+    } else {
+      g
+    }
   }
 
   if (n_thresh == 1L) {
@@ -265,14 +290,16 @@ bptr <- function(formula, data, id, time, q,
   #  ROBUST STANDARD ERRORS                                                   #
   # ======================================================================== #
 
-  se1 <- robustSE(X_dm[ind1 == 1, , drop = FALSE],
-                  ols$resid[ind1 == 1], type = se_type)
-  se2 <- robustSE(X_dm[ind2 == 1, , drop = FALSE],
-                  ols$resid[ind2 == 1], type = se_type)
+  vcov1 <- robustVcov(X_dm[ind1 == 1, , drop = FALSE],
+                      ols$resid[ind1 == 1], type = se_type)
+  vcov2 <- robustVcov(X_dm[ind2 == 1, , drop = FALSE],
+                      ols$resid[ind2 == 1], type = se_type)
+  se1 <- sqrt(diag(vcov1)); se2 <- sqrt(diag(vcov2))
 
   if (n_thresh == 2L) {
-    se3 <- robustSE(X_dm[ind3 == 1, , drop = FALSE],
-                    ols$resid[ind3 == 1], type = se_type)
+    vcov3 <- robustVcov(X_dm[ind3 == 1, , drop = FALSE],
+                        ols$resid[ind3 == 1], type = se_type)
+    se3 <- sqrt(diag(vcov3))
   }
 
   # ======================================================================== #
@@ -301,8 +328,20 @@ bptr <- function(formula, data, id, time, q,
   n_groups <- panel_info$n_units
   n_params <- n_regimes * n_vars
   df_resid <- n_obs - n_params - n_groups
+  if (df_resid <= 0)
+    warning(sprintf(
+      "Degrees of freedom (%d) are non-positive; the model is over-parameterized for this panel size. t-statistics and p-values will not be reliable.",
+      df_resid))
   ssr      <- sum(ols$resid^2)
   tss_w    <- sum((y_dm - mean(y_dm))^2)
+
+  # ======================================================================== #
+  #  REGIME TABLE (N x T wide matrix)                                         #
+  # ======================================================================== #
+
+  regime_table <- as.data.frame(
+    tapply(regime_classification, list(data[[id]], data[[time]]), identity)
+  )
 
   # ======================================================================== #
   #  RESULT OBJECT                                                             #
@@ -310,7 +349,6 @@ bptr <- function(formula, data, id, time, q,
 
   result <- list(
     # Core estimates
-    gamma               = gamma,
     thresholds          = gamma,
     n_regimes           = n_regimes,
     n_thresh            = n_thresh,
@@ -319,8 +357,9 @@ bptr <- function(formula, data, id, time, q,
     beta3               = if (n_thresh == 2L) ols$beta3 else NULL,
     coefficients        = coef_mat,
     std_errors          = se_mat,
+    vcov_regime         = if (n_thresh == 1L) list(vcov1, vcov2)
+                          else list(vcov1, vcov2, vcov3),
     # Fit
-    fitted              = ols$fitted,
     fitted_values       = ols$fitted,
     residuals           = ols$resid,
     # Goodness-of-fit
@@ -333,6 +372,7 @@ bptr <- function(formula, data, id, time, q,
     n_groups            = n_groups,
     n_obs_regime        = n_obs_regime,
     regime_classification = regime_classification,
+    regime_table          = regime_table,
     # Model metadata
     buffer              = buffer,
     trim                = trim,

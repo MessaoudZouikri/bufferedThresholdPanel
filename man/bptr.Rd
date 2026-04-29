@@ -23,7 +23,7 @@ bptr(
   n_thresh = 1,
   buffer = FALSE,
   trim = 0.1,
-  grid_size = 300,
+  grid_size = NULL,
   grid_size_3 = NULL,
   se_type = "HC3",
   ...
@@ -70,12 +70,18 @@ standard abrupt transition (\code{FALSE})}
 \item{trim}{Numeric trimming fraction for threshold grid (default 0.10,
 i.e. 10\%--90\% range, following Hansen (1999))}
 
-\item{grid_size}{Integer. Grid resolution for 1-threshold / 2-regime search
-(default 300)}
+\item{grid_size}{Integer or \code{NULL}. Optional cap on the number of grid
+points for the 1-threshold search and the 3-regime PTR search.
+\code{NULL} (default) performs an exhaustive search over all unique
+observed values in the trimming range — the theoretically correct approach
+following the piecewise-constant SSR property of threshold models.
+Pass an integer to cap the search (useful in bootstrap loops or quick
+illustration).}
 
-\item{grid_size_3}{Integer. Grid resolution for 3-regime BTPD 4-D search
-(default \code{min(grid_size, 50)}). Increase for finer search at the
-cost of computation time}
+\item{grid_size_3}{Integer or \code{NULL}. Number of observed-value grid
+points for the 3-regime BTPD 4-D search (default 50). When \code{NULL},
+defaults to \code{min(grid_size, 50)} if \code{grid_size} is set, or 50
+otherwise. Increase for a finer search at the cost of computation time.}
 
 \item{se_type}{Character. Robust SE type: "HC0", "HC1", "HC2", or "HC3"}
 
@@ -89,17 +95,21 @@ cost of computation time}
 \code{fitted}, \code{residuals}, \code{nobs}, \code{vcov} and \code{predict}).}
 
 \item{newdata}{An optional data frame for out-of-sample prediction.
-Must contain the threshold variable and all regressors.}
+Must contain all regressors and the threshold variable.  For
+\code{buffer = TRUE} 2-regime models the cross-sectional ID column
+(same name as \code{object$id}) is also required to assign hysteresis
+regimes correctly.}
 
 \item{which}{Integer vector: \code{1} (residuals vs fitted) and/or
 \code{2} (threshold variable with regime boundaries). Default \code{1:2}.}
 }
 \value{
 An object of class \code{"bptr"} — a named list containing:
-  \code{gamma}, \code{thresholds}, \code{n_regimes}, \code{n_thresh},
+  \code{thresholds}, \code{n_regimes}, \code{n_thresh},
   \code{beta1}, \code{beta2}, \code{beta3} (3-regime only),
   \code{coefficients} (p x K matrix), \code{std_errors} (p x K matrix),
-  \code{fitted}, \code{fitted_values}, \code{residuals}, \code{ssr},
+  \code{vcov_regime} (list of per-regime HC sandwich variance-covariance matrices),
+  \code{fitted_values}, \code{residuals}, \code{ssr},
   \code{tss_within}, \code{df_residual}, \code{n_obs}, \code{n_groups},
   \code{n_obs_regime}, \code{regime_classification}, plus model metadata.
 }
@@ -108,10 +118,6 @@ Estimates one- or two-threshold panel data models with individual fixed effects.
 When \code{buffer = FALSE} the classical Hansen (1999) PTR model is estimated.
 When \code{buffer = TRUE} the Belarbi et al. (2021) BTPD model with hysteresis
 is estimated.
-
-Returns a block-diagonal matrix built from the per-regime sandwich
-standard errors. Off-diagonal blocks (cross-regime covariances) are
-set to zero.
 }
 \details{
 \strong{Number of regimes and thresholds:}
@@ -122,11 +128,18 @@ set to zero.
     for BTPD: rL1, rU1, rL2, rU2 with rL1 <= rU1 < rL2 <= rU2)
 }
 
-\strong{Grid search computational note:} For the 3-regime BTPD the search is
-over a 4-dimensional parameter space. The grid resolution is automatically
-capped at \code{min(grid_size, 50)} for this case to keep computation
-feasible (~260 k candidate models at 50 points).  Use \code{grid_size_3} to
-override.
+\strong{Grid search computational note:} For 2-regime models and the
+3-regime PTR, an exhaustive search over all unique observed values in the
+trimming range is used by default (the piecewise-constant SSR property
+guarantees the global minimum is found this way).  For the 3-regime BTPD
+the search is over a 4-dimensional parameter space; the grid is capped at
+50 quantile points by default (~260 k candidate models).  Use
+\code{grid_size_3} to override.
+
+\code{vcov()} returns a block-diagonal matrix of per-regime HC sandwich
+variance-covariance matrices (off-diagonal cross-regime blocks are zero).
+Within-regime blocks are the full sandwich matrix, suitable for Wald tests
+on linear combinations of coefficients within a single regime.
 }
 \examples{
 # ── Simulated panel (small for fast execution) ───────────────

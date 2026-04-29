@@ -110,6 +110,7 @@ bptr_table <- function(x, digits = 3, stars = TRUE, title = NULL,
   )
 
   gt_tbl <- gt::gt(tbl_df) |>
+    gt::cols_hide(columns = "row_type") |>
     gt::tab_header(title = tbl_title) |>
     gt::cols_label(.list = c(list(term = "Variable"), as.list(regime_labels))) |>
     gt::tab_source_note(

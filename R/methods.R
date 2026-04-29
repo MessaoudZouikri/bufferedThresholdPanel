@@ -120,27 +120,52 @@ residuals.bptr <- function(object, ...) object$residuals
 #' @export
 nobs.bptr <- function(object, ...) object$n_obs
 
-#' Variance-Covariance Matrix of a BPTR Model
-#'
-#' Returns a block-diagonal matrix built from the per-regime sandwich
-#' standard errors. Off-diagonal blocks (cross-regime covariances) are
-#' set to zero.
-#'
 #' @rdname bptr
+#' @details
+#' \code{vcov()} returns a block-diagonal matrix of per-regime HC sandwich
+#' variance-covariance matrices (off-diagonal cross-regime blocks are zero).
+#' Within-regime blocks are the full sandwich matrix, suitable for Wald tests
+#' on linear combinations of coefficients within a single regime.
 #' @export
 vcov.bptr <- function(object, ...) {
-  sm <- object$std_errors
-  v  <- diag(as.vector(sm)^2)
-  rn <- as.vector(outer(rownames(sm),
-                         paste0("regime", seq_len(ncol(sm))),
+  mats <- object$vcov_regime
+  k    <- length(object$var_names)
+  nr   <- object$n_regimes
+  v    <- matrix(0, nr * k, nr * k)
+  for (i in seq_len(nr)) {
+    idx <- (i - 1L) * k + seq_len(k)
+    v[idx, idx] <- mats[[i]]
+  }
+  rn <- as.vector(outer(object$var_names,
+                         paste0("regime", seq_len(nr)),
                          paste, sep = ":"))
   rownames(v) <- colnames(v) <- rn
   v
 }
 
+#' Regime Classification Table
+#'
+#' Extracts the wide-format regime classification table from a fitted
+#' \code{bptr} object: rows are cross-sectional units (countries), columns are
+#' time periods (years), and each cell gives the regime (1, 2, or 3) assigned
+#' to that unit-period observation.
+#'
+#' @param object A \code{bptr} object.
+#' @param ... Additional arguments (currently ignored).
+#' @return A data frame of dimensions N \eqn{\times} T.
+#' @export
+regime_table <- function(object, ...) UseMethod("regime_table")
+
+#' @rdname regime_table
+#' @export
+regime_table.bptr <- function(object, ...) object$regime_table
+
 #' @rdname bptr
 #' @param newdata An optional data frame for out-of-sample prediction.
-#'   Must contain the threshold variable and all regressors.
+#'   Must contain all regressors and the threshold variable.  For
+#'   \code{buffer = TRUE} 2-regime models the cross-sectional ID column
+#'   (same name as \code{object$id}) is also required to assign hysteresis
+#'   regimes correctly.
 #' @export
 predict.bptr <- function(object, newdata = NULL, ...) {
   if (is.null(newdata)) return(object$fitted_values)
@@ -152,7 +177,15 @@ predict.bptr <- function(object, newdata = NULL, ...) {
   gamma <- object$thresholds
   pred  <- numeric(nrow(X))
   if (object$n_regimes == 2L) {
-    ind1 <- as.numeric(q_new <= gamma[1]); ind2 <- 1 - ind1
+    if (object$buffer) {
+      if (!object$id %in% names(newdata))
+        stop(paste("ID variable", object$id,
+                   "not found in newdata (required for buffer regime assignment)"))
+      buf  <- buildBufferIndicators(q_new, gamma[1], gamma[2], NULL, newdata[[object$id]])
+      ind2 <- buf; ind1 <- 1 - buf
+    } else {
+      ind1 <- as.numeric(q_new <= gamma[1]); ind2 <- 1 - ind1
+    }
     if (sum(ind1) > 0) pred[ind1 == 1] <- X[ind1 == 1, , drop = FALSE] %*% object$beta1
     if (sum(ind2) > 0) pred[ind2 == 1] <- X[ind2 == 1, , drop = FALSE] %*% object$beta2
   } else {
@@ -233,7 +266,9 @@ plot.bptr <- function(x, which = 1:2, ...) {
 #' @param n_boot Integer. Number of bootstrap replications (default 299)
 #' @param trim Numeric. Trimming fraction for threshold grid (default 0.10,
 #'   i.e. 10\%--90\% range, following Hansen (1999))
-#' @param grid_size Integer. Grid resolution for threshold search (default 300)
+#' @param grid_size Integer or \code{NULL}. Optional cap on the number of grid
+#'   points; \code{NULL} (default) uses an exhaustive search over all unique
+#'   observed values in the trimming range.
 #' @param seed Integer. Random seed for reproducibility (default 42).
 #'   Note: this call sets the global RNG state via \code{set.seed()}.
 #' @return An object of class \code{"bptr_test"} with components:
@@ -261,7 +296,7 @@ plot.bptr <- function(x, which = 1:2, ...) {
 #' }
 bptr_test <- function(formula, data, id, time, q,
                       buffer = FALSE, n_boot = 299,
-                      trim = 0.10, grid_size = 300, seed = 42) {
+                      trim = 0.10, grid_size = NULL, seed = 42) {
   set.seed(seed)
   validatePanel(data, id, time)
 
@@ -412,7 +447,7 @@ bptr_test_23 <- function(fit_2reg, n_boot = 299, grid_size_3 = 50L,
       fb2 <- bptr(formula = fit_2reg$formula, data = db,
                   id = fit_2reg$id, time = fit_2reg$time, q = fit_2reg$q_name,
                   n_thresh = 1L, buffer = fit_2reg$buffer, trim = fit_2reg$trim,
-                  grid_size = 300L, se_type = fit_2reg$se_type)
+                  se_type = fit_2reg$se_type)
       fb3 <- bptr(formula = fit_2reg$formula, data = db,
                   id = fit_2reg$id, time = fit_2reg$time, q = fit_2reg$q_name,
                   n_thresh = 2L, buffer = fit_2reg$buffer, trim = fit_2reg$trim,
@@ -490,8 +525,9 @@ print.bptr_test23 <- function(x, ...) {
 #' @param n_boot Integer. Bootstrap replications for each test (default 299)
 #' @param trim Numeric. Trimming fraction (default 0.10, i.e. 10\%--90\% range,
 #'   following Hansen (1999))
-#' @param grid_size Integer. Grid resolution for the 2-regime search
-#'   (default 300)
+#' @param grid_size Integer or \code{NULL}. Optional cap on the number of grid
+#'   points for the 2-regime search; \code{NULL} (default) uses an exhaustive
+#'   search over all unique observed values in the trimming range.
 #' @param grid_size_3 Integer. Grid resolution for the 3-regime BTPD 4-D
 #'   search (default 50)
 #' @param alpha Numeric. Significance level for the sequential decision rule
@@ -499,8 +535,10 @@ print.bptr_test23 <- function(x, ...) {
 #' @param seed Integer. Random seed (default 42)
 #' @return An object of class \code{"bptr_test_seq"} with components:
 #'   \code{test_12} (F1,2 result), \code{test_23} (\code{NULL} if F1,2 not
-#'   rejected), \code{final_model} (selected \code{bptr} object),
-#'   \code{n_regimes_selected}, \code{alpha}
+#'   rejected), \code{final_model} (the 3-regime model when F2,3 is rejected;
+#'   the 2-regime model otherwise — retained for comparison even when linearity
+#'   is not rejected), \code{n_regimes_selected} (1 if linearity not rejected,
+#'   2 if only F1,2 rejected, 3 if both rejected), \code{alpha}
 #' @references
 #'   Belarbi, Y., Hamdi, F., Khalfi, A., and Souam, S. (2021).
 #'   Growth, institutions and oil dependence: A buffered threshold panel approach.
@@ -524,7 +562,7 @@ bptr_test_seq <- function(formula, data, id, time, q,
                            buffer      = FALSE,
                            n_boot      = 299,
                            trim        = 0.10,
-                           grid_size   = 300,
+                           grid_size   = NULL,
                            grid_size_3 = 50L,
                            alpha       = 0.05,
                            seed        = 42) {
@@ -537,7 +575,7 @@ bptr_test_seq <- function(formula, data, id, time, q,
   test_23 <- NULL; n_reg_sel <- 1L; final_model <- test_12$model
 
   if (test_12$p_value >= alpha) {
-    message(sprintf("  F1,2 p = %.4f >= %.2f: linearity not rejected. Final: linear model.",
+    message(sprintf("  F1,2 p = %.4f >= %.2f: linearity not rejected. 2-regime model retained in $final_model for reference.",
                     test_12$p_value, alpha))
   } else {
     message(sprintf("  F1,2 p = %.4f < %.2f: linearity rejected.",
@@ -574,8 +612,11 @@ print.bptr_test_seq <- function(x, ...) {
   cat("\n=== Sequential Regime Test (Belarbi et al. 2021) ===\n\n")
   print(x$test_12)
   if (!is.null(x$test_23)) print(x$test_23)
-  cat(sprintf("==> Selected model: %d regime(s)  (alpha = %.2f)\n\n",
-              x$n_regimes_selected, x$alpha))
+  note <- if (x$n_regimes_selected == 1L)
+    "  [linearity not rejected; $final_model holds 2-regime fit for comparison]"
+  else ""
+  cat(sprintf("==> Selected model: %d regime(s)  (alpha = %.2f)%s\n\n",
+              x$n_regimes_selected, x$alpha, note))
   if (!is.null(x$final_model)) { cat("Final model:\n"); print(x$final_model) }
   invisible(x)
 }
@@ -627,10 +668,10 @@ bptr_bootstrap <- function(x, n_boot = 299, workers = NULL, seed = 42) {
   set.seed(seed)
   w <- if (is.null(workers)) max(1L, parallelly::availableCores() - 1L) else
     max(1L, as.integer(workers))
-  old_plan <- future::plan()
-  on.exit(future::plan(old_plan), add = TRUE)
-  if (w > 1L) future::plan(future::multisession, workers = w) else
-    future::plan(future::sequential)
+  if (w > 1L) {
+    future::plan(future::multisession, workers = w)
+    on.exit(future::plan(future::sequential), add = TRUE)
+  }
 
   fv    <- x$fitted_values; rs <- x$residuals
   id_v  <- x$data[[x$id]]; uniq <- unique(id_v)
@@ -647,7 +688,7 @@ bptr_bootstrap <- function(x, n_boot = 299, workers = NULL, seed = 42) {
       { fb <- bptr(formula = x$formula, data = db, id = x$id, time = x$time,
                    q = x$q_name, n_thresh = x$n_thresh, buffer = x$buffer,
                    trim = x$trim, se_type = x$se_type)
-        list(gamma = fb$gamma, beta1 = fb$beta1, beta2 = fb$beta2) },
+        list(gamma = fb$thresholds, beta1 = fb$beta1, beta2 = fb$beta2) },
       error = function(e) NULL)
   }
 

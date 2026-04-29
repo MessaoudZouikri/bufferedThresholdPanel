@@ -14,7 +14,7 @@ bptr_test_seq(
   buffer = FALSE,
   n_boot = 299,
   trim = 0.1,
-  grid_size = 300,
+  grid_size = NULL,
   grid_size_3 = 50L,
   alpha = 0.05,
   seed = 42
@@ -40,8 +40,9 @@ bptr_test_seq(
 \item{trim}{Numeric. Trimming fraction (default 0.10, i.e. 10\%--90\% range,
 following Hansen (1999))}
 
-\item{grid_size}{Integer. Grid resolution for the 2-regime search
-(default 300)}
+\item{grid_size}{Integer or \code{NULL}. Optional cap on the number of grid
+points for the 2-regime search; \code{NULL} (default) uses an exhaustive
+search over all unique observed values in the trimming range.}
 
 \item{grid_size_3}{Integer. Grid resolution for the 3-regime BTPD 4-D
 search (default 50)}
@@ -58,8 +59,10 @@ search (default 50)}
 \value{
 An object of class \code{"bptr_test_seq"} with components:
   \code{test_12} (F1,2 result), \code{test_23} (\code{NULL} if F1,2 not
-  rejected), \code{final_model} (selected \code{bptr} object),
-  \code{n_regimes_selected}, \code{alpha}
+  rejected), \code{final_model} (the 3-regime model when F2,3 is rejected;
+  the 2-regime model otherwise — retained for comparison even when linearity
+  is not rejected), \code{n_regimes_selected} (1 if linearity not rejected,
+  2 if only F1,2 rejected, 3 if both rejected), \code{alpha}
 }
 \description{
 Implements the complete sequential testing strategy of Belarbi et al. (2021),

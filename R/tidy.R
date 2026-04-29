@@ -34,13 +34,15 @@ tidy.bptr <- function(x, conf.int = FALSE, conf.level = 0.95, ...) {
   n_regimes      <- ncol(coefs)
   variable_names <- rownames(coefs)
 
+  t_vals <- as.vector(coefs) / as.vector(ses)
+
   result <- tibble::tibble(
     regime    = rep(seq_len(n_regimes), each = length(variable_names)),
     term      = rep(variable_names, times = n_regimes),
     estimate  = as.vector(coefs),
     std.error = as.vector(ses),
-    statistic = as.vector(coefs) / as.vector(ses),
-    p.value   = 2 * stats::pt(-abs(as.vector(coefs) / as.vector(ses)), df = df_r)
+    statistic = t_vals,
+    p.value   = 2 * stats::pt(-abs(t_vals), df = df_r)
   )
 
   if (conf.int) {

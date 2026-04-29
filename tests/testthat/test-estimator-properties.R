@@ -284,21 +284,23 @@ test_that("bootstrap CI width for threshold decreases as n_boot increases", {
 # 12. SSR grid profile — estimated threshold is a global minimum
 # ================================================================
 
-test_that("estimated PTR threshold minimises SSR over the entire grid", {
+test_that("estimated PTR threshold minimises SSR over the entire exhaustive grid", {
   skip_on_cran()
   set.seed(12L)
   df  <- make_dgp2(N = 30L, TT = 8L, seed = 12L)
   fit <- bptr(y ~ x1, data = df, id = "id", time = "time", q = "q",
-              n_thresh = 1L, buffer = FALSE, grid_size = 100L)
+              n_thresh = 1L, buffer = FALSE)   # exhaustive: no grid_size cap
 
-  # Build SSR profile manually for the same grid
+  # Reconstruct the same exhaustive grid used internally by make_grid
   fe    <- removeFE(df$y, matrix(df$x1, ncol = 1L), df$id)
-  grid  <- sort(unique(as.numeric(quantile(df$q, seq(0.10, 0.90, length.out = 100L), type = 1L, na.rm = TRUE))))
+  q_lo  <- as.numeric(quantile(df$q, 0.10, type = 7L, na.rm = TRUE))
+  q_hi  <- as.numeric(quantile(df$q, 0.90, type = 7L, na.rm = TRUE))
+  grid  <- sort(unique(df$q[df$q >= q_lo & df$q <= q_hi]))
   ssr_profile <- sapply(grid, function(g)
     computeSSR(fe$y_dm, fe$X_dm, g_vec = g, q = df$q, buffer = FALSE))
 
   expect_lte(fit$ssr, min(ssr_profile) + 1e-8,
-             label = "fit$ssr <= min(profile SSR) over the grid")
+             label = "fit$ssr <= min(profile SSR) over the exhaustive observed-value grid")
 })
 
 # ================================================================

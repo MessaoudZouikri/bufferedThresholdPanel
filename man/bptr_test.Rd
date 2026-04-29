@@ -14,7 +14,7 @@ bptr_test(
   buffer = FALSE,
   n_boot = 299,
   trim = 0.1,
-  grid_size = 300,
+  grid_size = NULL,
   seed = 42
 )
 
@@ -38,7 +38,9 @@ bptr_test(
 \item{trim}{Numeric. Trimming fraction for threshold grid (default 0.10,
 i.e. 10\%--90\% range, following Hansen (1999))}
 
-\item{grid_size}{Integer. Grid resolution for threshold search (default 300)}
+\item{grid_size}{Integer or \code{NULL}. Optional cap on the number of grid
+points; \code{NULL} (default) uses an exhaustive search over all unique
+observed values in the trimming range.}
 
 \item{seed}{Integer. Random seed for reproducibility (default 42).
 Note: this call sets the global RNG state via \code{set.seed()}.}

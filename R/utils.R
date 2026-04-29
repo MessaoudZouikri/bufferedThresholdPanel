@@ -14,14 +14,21 @@ removeFE <- function(y, X, id) {
   n_vars <- ncol(X); n_obs <- length(y)
   y_dm <- numeric(n_obs)
   X_dm <- matrix(0, nrow = n_obs, ncol = n_vars)
+  n_singleton <- 0L
   for (i in unique_ids) {
     idx <- which(id == i)
     if (length(idx) > 1) {
       y_dm[idx]   <- y[idx] - mean(y[idx], na.rm = TRUE)
       X_dm[idx, ] <- sweep(X[idx, , drop = FALSE], 2,
                            colMeans(X[idx, , drop = FALSE], na.rm = TRUE), "-")
+    } else {
+      n_singleton <- n_singleton + 1L
     }
   }
+  if (n_singleton > 0L)
+    warning(sprintf(
+      "%d singleton unit(s) with T=1 found; their observations are demeaned to zero and contribute nothing to estimation.",
+      n_singleton))
   colnames(X_dm) <- colnames(X)
   list(y_dm = y_dm, X_dm = X_dm)
 }
@@ -144,10 +151,12 @@ buildBufferIndicators3 <- function(q, rL1, rU1, rL2, rU2, id) {
 concentratedOLS <- function(y_dm, X_dm, ind1, ind2) {
   n_obs <- length(y_dm); n_vars <- ncol(X_dm)
   ols_r <- function(idx) {
-    if (length(idx) > n_vars)
-      as.vector(solve(crossprod(X_dm[idx, , drop = FALSE])) %*%
-                  crossprod(X_dm[idx, , drop = FALSE], y_dm[idx]))
-    else rep(0, n_vars)
+    if (length(idx) <= n_vars) return(rep(0, n_vars))
+    XtX <- crossprod(X_dm[idx, , drop = FALSE])
+    tryCatch(
+      as.vector(solve(XtX) %*% crossprod(X_dm[idx, , drop = FALSE], y_dm[idx])),
+      error = function(e) rep(0, n_vars)
+    )
   }
   idx1 <- which(ind1 == 1); idx2 <- which(ind2 == 1)
   beta1 <- ols_r(idx1); beta2 <- ols_r(idx2)
@@ -178,14 +187,16 @@ concentratedOLS <- function(y_dm, X_dm, ind1, ind2) {
 concentratedOLS3 <- function(y_dm, X_dm, ind1, ind2, ind3) {
   n_obs <- length(y_dm); n_vars <- ncol(X_dm)
   ols_r <- function(idx) {
-    if (length(idx) > n_vars)
-      as.vector(solve(crossprod(X_dm[idx, , drop = FALSE])) %*%
-                  crossprod(X_dm[idx, , drop = FALSE], y_dm[idx]))
-    else rep(0, n_vars)
+    if (length(idx) <= n_vars) return(rep(0, n_vars))
+    XtX <- crossprod(X_dm[idx, , drop = FALSE])
+    tryCatch(
+      as.vector(solve(XtX) %*% crossprod(X_dm[idx, , drop = FALSE], y_dm[idx])),
+      error = function(e) rep(0, n_vars)
+    )
   }
-  idx1 <- which(ind1 == 1L | ind1 == 1)
-  idx2 <- which(ind2 == 1L | ind2 == 1)
-  idx3 <- which(ind3 == 1L | ind3 == 1)
+  idx1 <- which(ind1 == 1)
+  idx2 <- which(ind2 == 1)
+  idx3 <- which(ind3 == 1)
   beta1 <- ols_r(idx1); beta2 <- ols_r(idx2); beta3 <- ols_r(idx3)
   fv <- numeric(n_obs)
   if (length(idx1) > 0) fv[idx1] <- X_dm[idx1, , drop = FALSE] %*% beta1
@@ -243,15 +254,46 @@ validatePanel <- function(data, id, time) {
   if (!id   %in% names(data)) stop(paste("ID variable",   id,   "not found in data"))
   if (!time %in% names(data)) stop(paste("Time variable", time, "not found in data"))
   n_units <- length(unique(data[[id]])); n_periods <- length(unique(data[[time]]))
-  n_obs <- nrow(data); has_miss <- any(is.na(data))
-  if (has_miss) warning("Missing values detected in data.")
+  n_obs <- nrow(data)
+  num_cols <- vapply(data, is.numeric, logical(1))
+  has_miss <- any(is.na(data[, num_cols, drop = FALSE]))
+  if (has_miss) warning("Missing values detected in numeric columns of data.")
   list(n_units = n_units, n_periods = n_periods, n_obs = n_obs,
        balanced = (n_obs == n_units * n_periods), has_missing = has_miss)
 }
 
 # --------------------------------------------------------------------------- #
-#  robustSE                                                                    #
+#  robustVcov / robustSE                                                       #
 # --------------------------------------------------------------------------- #
+
+#' Full Sandwich Variance-Covariance Matrix (HC estimator)
+#'
+#' Returns the complete p x p sandwich matrix rather than only the diagonal
+#' standard errors.  Used internally by \code{\link{robustSE}} and stored
+#' per-regime in \code{bptr} objects so that \code{\link{vcov.bptr}} can
+#' produce a correct block-diagonal variance matrix.
+#'
+#' @param X Design matrix
+#' @param resid Residual vector
+#' @param type One of "HC0", "HC1", "HC2", "HC3"
+#' @return Symmetric p x p variance-covariance matrix
+#' @export
+robustVcov <- function(X, resid, type = "HC3") {
+  if (is.vector(X)) X <- matrix(X, ncol = 1)
+  k <- ncol(X)
+  if (length(resid) == 0 || k == 0) return(matrix(0, k, k))
+  n <- nrow(X)
+  if (n <= k) return(matrix(Inf, k, k))
+  XTX_inv <- tryCatch(solve(crossprod(X)), error = function(e) NULL)
+  if (is.null(XTX_inv)) return(matrix(Inf, k, k))
+  if (type %in% c("HC2", "HC3")) {
+    h <- pmin(rowSums((X %*% XTX_inv) * X), 1 - .Machine$double.eps)
+  }
+  omega <- switch(type,
+    "HC0" = resid^2, "HC1" = resid^2 * n / (n - k),
+    "HC2" = resid^2 / (1 - h), "HC3" = resid^2 / (1 - h)^2, resid^2)
+  XTX_inv %*% crossprod(X, diag(omega) %*% X) %*% XTX_inv
+}
 
 #' Robust Standard Errors (HC sandwich estimator)
 #' @param X Design matrix
@@ -261,16 +303,5 @@ validatePanel <- function(data, id, time) {
 #' @importFrom stats df.residual
 #' @export
 robustSE <- function(X, resid, type = "HC3") {
-  if (is.vector(X)) X <- matrix(X, ncol = 1)
-  if (length(resid) == 0 || ncol(X) == 0) return(rep(0, ncol(X)))
-  n <- nrow(X); k <- ncol(X)
-  if (n <= k) return(rep(Inf, k))
-  XTX_inv <- tryCatch(solve(crossprod(X)), error = function(e) diag(Inf, k))
-  if (type %in% c("HC2", "HC3")) {
-    h <- pmin(rowSums((X %*% XTX_inv) * X), 1 - .Machine$double.eps)
-  }
-  omega <- switch(type,
-    "HC0" = resid^2, "HC1" = resid^2 * n / (n - k),
-    "HC2" = resid^2 / (1 - h), "HC3" = resid^2 / (1 - h)^2, resid^2)
-  sqrt(diag(XTX_inv %*% crossprod(X, diag(omega) %*% X) %*% XTX_inv))
+  sqrt(diag(robustVcov(X, resid, type)))
 }
