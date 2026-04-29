@@ -75,13 +75,12 @@ points for the 1-threshold search and the 3-regime PTR search.
 \code{NULL} (default) performs an exhaustive search over all unique
 observed values in the trimming range — the theoretically correct approach
 following the piecewise-constant SSR property of threshold models.
-Pass an integer to cap the search (useful in bootstrap loops or quick
+Pass an integer to cap the search (useful in bootstrap loops or for quick
 illustration).}
 
 \item{grid_size_3}{Integer or \code{NULL}. Number of observed-value grid
-points for the 3-regime BTPD 4-D search (default 50). When \code{NULL},
-defaults to \code{min(grid_size, 50)} if \code{grid_size} is set, or 50
-otherwise. Increase for a finer search at the cost of computation time.}
+points for the 3-regime BTPD 4-D search (default 50). Increase for a
+finer search at the cost of computation time.}
 
 \item{se_type}{Character. Robust SE type: "HC0", "HC1", "HC2", or "HC3"}
 
@@ -108,7 +107,7 @@ An object of class \code{"bptr"} — a named list containing:
   \code{thresholds}, \code{n_regimes}, \code{n_thresh},
   \code{beta1}, \code{beta2}, \code{beta3} (3-regime only),
   \code{coefficients} (p x K matrix), \code{std_errors} (p x K matrix),
-  \code{vcov_regime} (list of per-regime HC sandwich variance-covariance matrices),
+  \code{vcov_regime} (list of per-regime sandwich variance matrices),
   \code{fitted_values}, \code{residuals}, \code{ssr},
   \code{tss_within}, \code{df_residual}, \code{n_obs}, \code{n_groups},
   \code{n_obs_regime}, \code{regime_classification}, plus model metadata.
@@ -128,13 +127,14 @@ is estimated.
     for BTPD: rL1, rU1, rL2, rU2 with rL1 <= rU1 < rL2 <= rU2)
 }
 
-\strong{Grid search computational note:} For 2-regime models and the
-3-regime PTR, an exhaustive search over all unique observed values in the
-trimming range is used by default (the piecewise-constant SSR property
-guarantees the global minimum is found this way).  For the 3-regime BTPD
-the search is over a 4-dimensional parameter space; the grid is capped at
-50 quantile points by default (~260 k candidate models).  Use
-\code{grid_size_3} to override.
+\strong{Grid search computational note:} For 2-regime models (PTR and BTPD)
+and the 3-regime PTR, the default is an exhaustive search over all unique
+observed values of the threshold variable within the trimming range — the
+only positions where the concentrated SSR can change (piecewise-constant
+property).  For the 3-regime BTPD the search spans a 4-dimensional parameter
+space; the grid is capped at 50 observed-value quantiles by default to keep
+computation feasible (~260 k candidate models).  Use \code{grid_size_3} to
+override.
 
 \code{vcov()} returns a block-diagonal matrix of per-regime HC sandwich
 variance-covariance matrices (off-diagonal cross-regime blocks are zero).
@@ -173,7 +173,7 @@ fit_I <- bptr(
                inflation + popGrowth + indVAGDP + tradeOpenness,
   data = panel_data, id = "countryId", time = "year",
   q = "oilRentGDP", n_thresh = 1, buffer = TRUE, se_type = "HC3",
-  grid_size = 50   # coarse grid for illustration; use >= 300 in practice
+  grid_size = 50   # cap at 50 points for speed; omit for exhaustive search
 )
 print(fit_I)
 
@@ -183,7 +183,7 @@ fit_II <- bptr(
                inflation + popGrowth + indVAGDP + tradeOpenness,
   data = panel_data, id = "countryId", time = "year",
   q = "rle", n_thresh = 1, buffer = TRUE, se_type = "HC3",
-  grid_size = 50   # coarse grid for illustration; use >= 300 in practice
+  grid_size = 50   # cap at 50 points for speed; omit for exhaustive search
 )
 print(fit_II)
 }

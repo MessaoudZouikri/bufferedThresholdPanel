@@ -11,22 +11,14 @@ robustVcov(X, resid, type = "HC3")
 
 \item{resid}{Residual vector}
 
-\item{type}{One of \code{"HC0"}, \code{"HC1"}, \code{"HC2"}, \code{"HC3"}}
+\item{type}{One of "HC0", "HC1", "HC2", "HC3"}
 }
 \value{
-A symmetric p \eqn{\times} p variance-covariance matrix.
-  Returns a zero matrix when \code{X} has no columns or \code{resid} is
-  empty; returns an \code{Inf}-filled matrix when the system is rank-deficient
-  or the design matrix has more columns than observations.
+Symmetric p x p variance-covariance matrix
 }
 \description{
-Returns the complete p x p HC sandwich variance-covariance matrix rather than
-only the diagonal standard errors.  Used internally by \code{\link{robustSE}}
-and stored per-regime in \code{bptr} objects so that \code{\link{vcov.bptr}}
-can produce a correct block-diagonal variance matrix suitable for Wald tests
-on linear combinations of coefficients within a regime.
-}
-\seealso{
-\code{\link{robustSE}} for the vector of standard errors (square root of
-the diagonal).
+Returns the complete p x p sandwich matrix rather than only the diagonal
+standard errors.  Used internally by \code{\link{robustSE}} and stored
+per-regime in \code{bptr} objects so that \code{\link{vcov.bptr}} can
+produce a correct block-diagonal variance matrix.
 }

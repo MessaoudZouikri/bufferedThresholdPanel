@@ -7,7 +7,7 @@
 buildBufferIndicators3(q, rL1, rU1, rL2, rU2, id)
 }
 \arguments{
-\item{q}{Numeric vector of demeaned threshold variable}
+\item{q}{Numeric vector of threshold variable (original scale, not demeaned)}
 
 \item{rL1}{Lower boundary of buffer zone 1}
 

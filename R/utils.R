@@ -54,7 +54,7 @@ buildIndicators <- function(q, gamma) as.numeric(q <= gamma)
 #' }
 #' For the first observation of each unit, regime is determined by q > g2.
 #'
-#' @param q Numeric vector of demeaned threshold variable
+#' @param q Numeric vector of threshold variable (original scale, not demeaned)
 #' @param g1 Lower buffer boundary (rL)
 #' @param g2 Upper buffer boundary (rU)
 #' @param prev_d Unused legacy argument (kept for API compatibility)
@@ -99,7 +99,7 @@ buildBufferIndicators <- function(q, g1, g2, prev_d, id) {
 #' }
 #' First observation in a buffer zone is assigned to the lower regime of that zone.
 #'
-#' @param q Numeric vector of demeaned threshold variable
+#' @param q Numeric vector of threshold variable (original scale, not demeaned)
 #' @param rL1 Lower boundary of buffer zone 1
 #' @param rU1 Upper boundary of buffer zone 1
 #' @param rL2 Lower boundary of buffer zone 2 (must be > rU1)
