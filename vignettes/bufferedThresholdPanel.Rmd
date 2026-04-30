@@ -495,15 +495,18 @@ print(boot_I); print(boot_II)
 
 ## Grid resolution guide
 
-| Model | Buffer? | Grid parameter | SSR evaluations (approx.) |
+| Model | Buffer? | Default `grid_size` | Evals at `grid_size = 300` |
 |---|---|---|---|
-| 2-regime PTR | No | `grid_size = 300` | 300 |
-| 2-regime BTPD | Yes | `grid_size = 300` | 45 000 |
-| 3-regime PTR | No | `grid_size = 300` | 45 000 |
+| 2-regime PTR | No | `NULL` (exhaustive) | 300 |
+| 2-regime BTPD | Yes | `NULL` (exhaustive) | 45 000 |
+| 3-regime PTR | No | `NULL` (exhaustive) | 45 000 |
 | 3-regime BTPD | Yes | `grid_size_3 = 50` | 260 000 |
 
-Use smaller values during exploration (`grid_size = 100`, `grid_size_3 = 20`)
-and increase to 300 / 50 (or higher) for final published results.
+The default (`grid_size = NULL`) performs an exhaustive search over all unique
+observed values of the threshold variable in the trimming range, which is the
+theoretically correct approach. Pass an integer to cap the search during
+exploration (`grid_size = 100`, `grid_size_3 = 20`) or in bootstrap loops
+where speed matters.
 
 ## Citation
 

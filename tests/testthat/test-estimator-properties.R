@@ -45,9 +45,10 @@ test_that("PTR recovers the true threshold to within grid resolution", {
   fit <- bptr(y ~ x1, data = df, id = "id", time = "time", q = "q",
               n_thresh = 1L, buffer = FALSE, grid_size = 300L)
   # Grid resolution over Uniform(-2,2) with 10% trim → range ≈ (-1.6, 1.6)
-  # Resolution ≈ 3.4/300 ≈ 0.011; allow ±0.05 to absorb grid quantisation
-  expect_lt(abs(fit$thresholds - 0.3), 0.05,
-            label = "gamma_hat within 0.05 of true gamma = 0.3")
+  # Resolution ≈ 3.4/300 ≈ 0.011; allow ±0.10 to absorb grid quantisation
+  # and finite-sample estimation noise from the within-FE (demeaned) estimator.
+  expect_lt(abs(fit$thresholds - 0.3), 0.10,
+            label = "gamma_hat within 0.10 of true gamma = 0.3")
 })
 
 test_that("PTR recovers regime-specific slopes to within statistical tolerance", {

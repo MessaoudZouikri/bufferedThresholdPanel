@@ -52,9 +52,12 @@
 #'   \code{beta1}, \code{beta2}, \code{beta3} (3-regime only),
 #'   \code{coefficients} (p x K matrix), \code{std_errors} (p x K matrix),
 #'   \code{vcov_regime} (list of per-regime sandwich variance matrices),
-#'   \code{fitted_values}, \code{residuals}, \code{ssr},
-#'   \code{tss_within}, \code{df_residual}, \code{n_obs}, \code{n_groups},
-#'   \code{n_obs_regime}, \code{regime_classification}, plus model metadata.
+#'   \code{fitted_values}, \code{residuals}, \code{ssr}, \code{sigma2}
+#'   (residual variance estimate), \code{tss_within}, \code{df_residual},
+#'   \code{n_obs}, \code{n_groups}, \code{n_obs_regime},
+#'   \code{regime_classification} (integer vector, one entry per observation),
+#'   \code{regime_table} (N x T data frame of regime assignments),
+#'   plus model metadata.
 #'
 #' @examples
 #' # ── Simulated panel (small for fast execution) ───────────────
