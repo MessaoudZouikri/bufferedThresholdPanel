@@ -248,7 +248,8 @@ computeSSR <- function(y_dm, X_dm, g_vec, q, buffer = FALSE, id = NULL) {
 #' @param data Data frame
 #' @param id Cross-sectional ID variable name
 #' @param time Time variable name
-#' @return List with panel structure information
+#' @return List with fields \code{n_units}, \code{n_periods}, \code{n_obs},
+#'   \code{balanced} (logical), \code{has_missing} (logical)
 #' @export
 validatePanel <- function(data, id, time) {
   if (!id   %in% names(data)) stop(paste("ID variable",   id,   "not found in data"))

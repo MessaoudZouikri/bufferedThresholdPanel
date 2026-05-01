@@ -54,7 +54,8 @@ An object of class \code{"bptr_test"} with components:
   \code{stat} (observed F1,2), \code{p_value} (bootstrap p-value),
   \code{boot_stats} (bootstrap replications), \code{n_boot},
   \code{threshold} (estimated threshold), \code{model} (fitted 2-regime
-  \code{bptr} object)
+  \code{bptr} object), \code{test_label} (character label used by the print
+  method)
 }
 \description{
 Tests the null hypothesis of a linear panel model against the alternative of

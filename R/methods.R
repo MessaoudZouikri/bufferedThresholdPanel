@@ -275,7 +275,8 @@ plot.bptr <- function(x, which = 1:2, ...) {
 #'   \code{stat} (observed F1,2), \code{p_value} (bootstrap p-value),
 #'   \code{boot_stats} (bootstrap replications), \code{n_boot},
 #'   \code{threshold} (estimated threshold), \code{model} (fitted 2-regime
-#'   \code{bptr} object)
+#'   \code{bptr} object), \code{test_label} (character label used by the print
+#'   method)
 #' @references
 #'   Belarbi, Y., Hamdi, F., Khalfi, A., and Souam, S. (2021).
 #'   Growth, institutions and oil dependence: A buffered threshold panel approach.
@@ -394,7 +395,8 @@ print.bptr_test <- function(x, ...) {
 #' @return An object of class \code{"bptr_test23"} with components:
 #'   \code{stat}, \code{p_value}, \code{boot_stats}, \code{n_boot},
 #'   \code{thresholds_2}, \code{thresholds_3}, \code{model_2reg},
-#'   \code{model_3reg}
+#'   \code{model_3reg}, \code{test_label} (character label used by the print
+#'   method)
 #' @references
 #'   Belarbi, Y., Hamdi, F., Khalfi, A., and Souam, S. (2021).
 #'   Growth, institutions and oil dependence: A buffered threshold panel approach.
@@ -634,7 +636,8 @@ print.bptr_test_seq <- function(x, ...) {
 #' @param x A fitted \code{bptr} object with \code{n_thresh = 1}
 #' @param n_boot Integer. Bootstrap replications (default 299)
 #' @param workers Integer or \code{NULL}. Parallel workers for
-#'   \code{future}/\code{furrr} (default: \code{availableCores() - 1})
+#'   \code{future}/\code{furrr} (default \code{NULL}: uses
+#'   \code{max(1L, availableCores() - 1L)})
 #' @param seed Integer. Random seed (default 42).
 #'   Note: sets global RNG state via \code{set.seed()}.
 #' @return An object of class \code{"bptr_bootstrap"} with components:

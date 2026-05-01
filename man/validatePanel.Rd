@@ -14,7 +14,8 @@ validatePanel(data, id, time)
 \item{time}{Time variable name}
 }
 \value{
-List with panel structure information
+List with fields \code{n_units}, \code{n_periods}, \code{n_obs},
+  \code{balanced} (logical), \code{has_missing} (logical)
 }
 \description{
 Validate Panel Data Structure

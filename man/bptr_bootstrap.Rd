@@ -15,7 +15,8 @@ bptr_bootstrap(x, n_boot = 299, workers = NULL, seed = 42)
 \item{n_boot}{Integer. Bootstrap replications (default 299)}
 
 \item{workers}{Integer or \code{NULL}. Parallel workers for
-\code{future}/\code{furrr} (default: \code{availableCores() - 1})}
+\code{future}/\code{furrr} (default \code{NULL}: uses
+\code{max(1L, availableCores() - 1L)})}
 
 \item{seed}{Integer. Random seed (default 42).
 Note: sets global RNG state via \code{set.seed()}.}

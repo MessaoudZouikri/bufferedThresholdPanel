@@ -37,7 +37,8 @@ Note: sets global RNG state via \code{set.seed()}.}
 An object of class \code{"bptr_test23"} with components:
   \code{stat}, \code{p_value}, \code{boot_stats}, \code{n_boot},
   \code{thresholds_2}, \code{thresholds_3}, \code{model_2reg},
-  \code{model_3reg}
+  \code{model_3reg}, \code{test_label} (character label used by the print
+  method)
 }
 \description{
 Tests H0: two-regime model against H1: three-regime model using the
