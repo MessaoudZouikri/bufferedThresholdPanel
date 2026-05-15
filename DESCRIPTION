@@ -5,7 +5,7 @@ Version: 0.1.2
 Authors@R: c(
     person("Messaoud", "Zouikri", email = "mzouikri@parisnanterre.fr",
            role = c("aut", "cre"), comment = c(ORCID = "0000-0002-6253-9074")),
-    person("Faycal", "Hamdi", email = "faycal.hamdi@univ-constantine2.dz",
+    person("Faycal", "Hamdi", email = "faycal.hamdi@usthb.edu.dz",
            role = "aut"),
     person("Said", "Souam", role = "aut"))
 Description: Estimates panel data threshold regression models with one or two
@@ -22,6 +22,7 @@ Description: Estimates panel data threshold regression models with one or two
 License: GPL (>= 3) | file LICENSE
 Encoding: UTF-8
 LazyData: true
+SystemRequirements: C++17
 RoxygenNote: 8.0.0
 Depends: R (>= 4.1.0)
 Imports:
@@ -57,5 +58,6 @@ Suggests:
     withr (>= 2.5.0),
     covr (>= 3.6.0)
 VignetteBuilder: knitr
+Config/Needs/coverage: r-lib/covr
 URL: https://github.com/MessaoudZouikri/bufferedThresholdPanel
 BugReports: https://github.com/MessaoudZouikri/bufferedThresholdPanel/issues
