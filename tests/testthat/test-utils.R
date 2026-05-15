@@ -369,3 +369,58 @@ test_that("validatePanel() detects unbalanced panel", {
   expect_equal(info$n_units, 2L)
   expect_equal(info$n_obs,   5L)
 })
+
+test_that("validatePanel() warns on missing values", {
+  df_miss <- data.frame(id = rep(1:3, each = 3), time = rep(1:3, 3),
+                        y = c(NA, rnorm(8)))
+  expect_warning(validatePanel(df_miss, "id", "time"), "Missing values")
+  info <- suppressWarnings(validatePanel(df_miss, "id", "time"))
+  expect_true(info$has_missing)
+})
+
+test_that("validatePanel() warns when data are not sorted by time", {
+  df_unsorted <- data.frame(id   = c(1L, 1L, 1L),
+                             time = c(3L, 1L, 2L))
+  expect_warning(validatePanel(df_unsorted, "id", "time"), "not sorted by time")
+})
+
+test_that("removeFE() warns on singleton units (T = 1)", {
+  id <- c(1L, 2L, 2L, 3L, 3L)
+  y  <- c(1, 2, 3, 4, 5)
+  X  <- matrix(rnorm(5), ncol = 1L)
+  expect_warning(removeFE(y, X, id), "singleton")
+})
+
+test_that("buildBufferIndicators() first obs in buffer closer to g2 → regime 2", {
+  # q = 0.4, g1 = 0, g2 = 0.5: dist_low = 0.4, dist_high = 0.1 → dist_high < dist_low → regime 2
+  d <- buildBufferIndicators(0.4, g1 = 0, g2 = 0.5, prev_d = NULL, id = 1L)
+  expect_equal(d, 1L)
+})
+
+test_that("buildBufferIndicators3() first obs in buffer zone 1 closer to rU1 → regime 2", {
+  # q = -0.15, rL1 = -0.5, rU1 = -0.1: dist_low = 0.35, dist_high = 0.05 → closer to rU1 → regime 2
+  d <- buildBufferIndicators3(-0.15, rL1 = -0.5, rU1 = -0.1, rL2 = 0.1, rU2 = 0.5, id = 1L)
+  expect_equal(d, 2L)
+})
+
+test_that("buildBufferIndicators3() first obs in buffer zone 2 closer to rU2 → regime 3", {
+  # q = 0.45, rL2 = 0.1, rU2 = 0.5: dist_low = 0.35, dist_high = 0.05 → closer to rU2 → regime 3
+  d <- buildBufferIndicators3(0.45, rL1 = -0.5, rU1 = -0.1, rL2 = 0.1, rU2 = 0.5, id = 1L)
+  expect_equal(d, 3L)
+})
+
+test_that("buildBufferIndicators3() hysteresis in buffer zone 1 from regime 2", {
+  # Unit goes R3 → R2 (clear) → buffer zone 1 while in R2 → stays R2 (d_prev > 1)
+  id <- rep(1L, 3L)
+  q  <- c(3.0, 0.0, -0.3)  # R3, clear R2, buffer zone 1
+  d  <- buildBufferIndicators3(q, rL1 = -0.5, rU1 = -0.1, rL2 = 0.1, rU2 = 0.5, id = id)
+  expect_equal(d[3L], 2L)
+})
+
+test_that("buildBufferIndicators3() hysteresis in buffer zone 2 from regime 3", {
+  # Unit goes R3 → buffer zone 2 → should stay R3 (d_prev > 2)
+  id <- rep(1L, 2L)
+  q  <- c(3.0, 0.3)  # R3, buffer zone 2
+  d  <- buildBufferIndicators3(q, rL1 = -0.5, rU1 = -0.1, rL2 = 0.1, rU2 = 0.5, id = id)
+  expect_equal(d[2L], 3L)
+})
