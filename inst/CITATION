@@ -1,0 +1,48 @@
+bibentry(
+  bibtype  = "Manual",
+  title    = "{bufferedThresholdPanel}: Buffered Panel Threshold Regression with Hysteresis",
+  author   = c(
+    person("Faycal",   "Hamdi",   role = "aut",
+           comment = c(ORCID = "0000-0002-6253-9074")),
+    person("Said",     "Souam",   role = "aut"),
+    person("Messaoud", "Zouikri", role = c("aut", "cre"))
+  ),
+  year     = "2025",
+  note     = "R package version 0.1.0",
+  url      = "https://github.com/MessaoudZouikri/bufferedThresholdPanel",
+  doi      = "10.32614/CRAN.package.bufferedThresholdPanel"
+)
+
+bibentry(
+  bibtype  = "Article",
+  title    = "The heterogeneous effect of economic complexity on growth and
+              human development: {N}ew empirical evidence using buffered
+              panel threshold regression",
+  author   = c(
+    person("Faycal",   "Hamdi"),
+    person("Said",     "Souam"),
+    person("Messaoud", "Zouikri")
+  ),
+  journal  = "The World Economy",
+  year     = "2025",
+  volume   = "48",
+  pages    = "2561--2592",
+  doi      = "10.1111/twec.70023"
+)
+
+bibentry(
+  bibtype  = "Article",
+  title    = "Growth, institutions and oil dependence: {A} buffered threshold
+              panel approach",
+  author   = c(
+    person("Yacine",      "Belarbi"),
+    person("Faycal",      "Hamdi"),
+    person("Abderaouf",   "Khalfi"),
+    person("Said",        "Souam")
+  ),
+  journal  = "Economic Modelling",
+  year     = "2021",
+  volume   = "99",
+  pages    = "105477",
+  doi      = "10.1016/j.econmod.2021.02.018"
+)

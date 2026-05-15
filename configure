@@ -1,0 +1,5 @@
+#!/bin/sh
+# Remove macOS Apple Double metadata files that interfere with compilation
+if [ -d src ]; then
+    find src -name '._*' -exec rm -f {} + 2>/dev/null || true
+fi

@@ -1,0 +1,12 @@
+^RAG$
+^RAG/.*
+^CRAN_readiness_report\.md$
+^HELP_WORKFLOW\.md$
+^INSTALLATION\.md$
+^bufferedThresholdPanel\.Rproj$
+^data-raw$
+^data-raw/.*
+^prompt\.txt$
+^\.git$
+^\.DS_Store$
+^AGENTS\.md$

@@ -1,0 +1,28 @@
+# Keep RAG locally only
+RAG/
+RAG/.*
+
+# Keep prompt.txt locally only
+prompt.txt
+
+# Keep AGENTS.md locally only
+AGENTS.md
+
+# macOS metadata
+.DS_Store
+._*
+
+# R / RStudio
+.Rhistory
+.RData
+.Rproj.user
+*.Rproj
+
+# Build artefacts
+src/*.o
+src/*.so
+src/*.dll
+src/symbols.rds
+
+# Misc
+data-raw/
