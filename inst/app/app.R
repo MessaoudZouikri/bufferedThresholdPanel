@@ -300,9 +300,10 @@ seqTestServer <- function(id, test_seq) {
       bs  <- test_seq()$test_12$boot_stats
       obs <- test_seq()$test_12$stat
       if (is.null(bs) || length(bs) == 0) return(NULL)
-      plot_ly(x = ~bs, type = "histogram", nbinsx = 40,
-              marker = list(color = "#6c757d", opacity = 0.7),
-              name   = "Bootstrap null") |>
+      plot_ly() |>
+        add_histogram(x = bs, nbinsx = 40,
+                      marker = list(color = "#6c757d", opacity = 0.7),
+                      name   = "Bootstrap null") |>
         add_lines(x = c(obs, obs), y = c(0, length(bs) / 5),
                   line = list(color = "red", width = 2),
                   name = sprintf("Observed F1,2 = %.3f", obs)) |>
@@ -547,9 +548,10 @@ bootstrapServer <- function(id, boot_result, model) {
 
       plots <- lapply(seq_len(ncol(gb)), function(k) {
         obs_val <- model()$thresholds[k]
-        plot_ly(x = ~gb[, k], type = "histogram", nbinsx = 40,
-                name   = paste0("\u03b3", k),
-                marker = list(opacity = 0.7)) |>
+        plot_ly() |>
+          add_histogram(x = gb[, k], nbinsx = 40,
+                        name   = paste0("\u03b3", k),
+                        marker = list(opacity = 0.7)) |>
           add_lines(x = rep(unname(obs_val), 2), y = c(0, nrow(gb) / 5),
                     inherit = FALSE,
                     line    = list(color = "red", width = 2),
@@ -711,8 +713,9 @@ diagnosticsServer <- function(id, model) {
     output$diag_hist <- renderPlotly({
       req(model())
       r <- model()$residuals
-      plot_ly(x = ~r, type = "histogram", nbinsx = 40,
-              marker = list(color = "#2c5282", opacity = 0.7)) |>
+      plot_ly() |>
+        add_histogram(x = r, nbinsx = 40,
+                      marker = list(color = "#2c5282", opacity = 0.7)) |>
         layout(title = "Residual Distribution",
                xaxis = list(title = "Residuals"),
                yaxis = list(title = "Count"))
