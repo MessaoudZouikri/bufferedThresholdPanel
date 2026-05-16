@@ -33,3 +33,16 @@ over-determined but numerically singular, \code{solve()} is wrapped in
 \code{tryCatch}: a warning is issued and zero coefficients are returned.
 Increase \code{trim} or \code{grid_size_3} if this warning appears frequently.
 }
+\examples{
+set.seed(1)
+n <- 60
+X <- matrix(rnorm(n), ncol = 1)
+y <- X * 2 + rnorm(n, 0, 0.5)
+ind1 <- as.numeric(seq_len(n) <= 20)
+ind2 <- as.numeric(seq_len(n) > 20 & seq_len(n) <= 40)
+ind3 <- as.numeric(seq_len(n) > 40)
+res <- concentratedOLS3(y, X, ind1, ind2, ind3)
+res$beta1
+res$beta2
+res$beta3
+}

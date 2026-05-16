@@ -18,6 +18,13 @@
 #' of \code{X} are excluded from their unit's mean but their demeaned value
 #' becomes \code{NA}; use \code{\link{validatePanel}} to detect missing values
 #' before fitting.
+#' @examples
+#' y  <- c(1, 2, 3, 4, 5, 6)
+#' X  <- matrix(c(1, 2, 1, 2, 1, 2), ncol = 1)
+#' id <- c(1, 1, 1, 2, 2, 2)
+#' dm <- removeFE(y, X, id)
+#' dm$y_dm
+#' dm$X_dm
 #' @importFrom stats ave
 #' @export
 removeFE <- function(y, X, id) {
@@ -47,6 +54,9 @@ removeFE <- function(y, X, id) {
 #' @param q Numeric vector of threshold variable
 #' @param gamma Threshold value
 #' @return Numeric vector of indicators (1 if q <= gamma, 0 otherwise)
+#' @examples
+#' q <- c(-1.2, 0.3, 0.7, -0.5, 1.1)
+#' buildIndicators(q, gamma = 0.5)
 #' @export
 buildIndicators <- function(q, gamma) as.numeric(q <= gamma)
 
@@ -86,6 +96,10 @@ buildIndicators <- function(q, gamma) as.numeric(q <= gamma)
 #' @param prev_d Unused legacy argument (kept for API compatibility)
 #' @param id Panel identifiers
 #' @return Numeric vector: 0 = regime 1, 1 = regime 2
+#' @examples
+#' q  <- c(-1.5, -0.3, 0.1, 0.5, 1.2, 0.0, 0.8, -0.8)
+#' id <- c(  1,    1,   1,   1,   1,   2,   2,    2)
+#' buildBufferIndicators(q, g1 = -0.2, g2 = 0.6, prev_d = NULL, id = id)
 #' @export
 buildBufferIndicators <- function(q, g1, g2, prev_d, id) {
   buildBufferIndicators_cpp(q, g1, g2, match(id, unique(id)))
@@ -136,6 +150,11 @@ buildBufferIndicators <- function(q, g1, g2, prev_d, id) {
 #' @param rU2 Upper boundary of buffer zone 2
 #' @param id Panel identifiers
 #' @return Integer vector with values 1L, 2L, or 3L
+#' @examples
+#' q  <- c(-2, -0.5, 0, 0.5, 1.2, 1.8, 2.5)
+#' id <- rep(1, 7)
+#' buildBufferIndicators3(q, rL1 = -0.3, rU1 = 0.3, rL2 = 1.0, rU2 = 1.5,
+#'                        id = id)
 #' @export
 buildBufferIndicators3 <- function(q, rL1, rU1, rL2, rU2, id) {
   buildBufferIndicators3_cpp(q, rL1, rU1, rL2, rU2, match(id, unique(id)))
@@ -158,6 +177,16 @@ buildBufferIndicators3 <- function(q, rL1, rU1, rL2, rU2, id) {
 #' are returned for that regime.  If the sub-matrix is exactly identified or
 #' over-determined but numerically singular, \code{solve()} is wrapped in
 #' \code{tryCatch}: a warning is issued and zero coefficients are returned.
+#' @examples
+#' set.seed(1)
+#' n <- 40
+#' X <- matrix(rnorm(n), ncol = 1)
+#' y <- X * 2 + rnorm(n, 0, 0.5)
+#' ind1 <- as.numeric(seq_len(n) <= 20)
+#' ind2 <- 1 - ind1
+#' res <- concentratedOLS(y, X, ind1, ind2)
+#' res$beta1
+#' res$beta2
 #' @export
 concentratedOLS <- function(y_dm, X_dm, ind1, ind2) {
   n_obs <- length(y_dm); n_vars <- ncol(X_dm)
@@ -210,6 +239,18 @@ concentratedOLS <- function(y_dm, X_dm, ind1, ind2) {
 #' over-determined but numerically singular, \code{solve()} is wrapped in
 #' \code{tryCatch}: a warning is issued and zero coefficients are returned.
 #' Increase \code{trim} or \code{grid_size_3} if this warning appears frequently.
+#' @examples
+#' set.seed(1)
+#' n <- 60
+#' X <- matrix(rnorm(n), ncol = 1)
+#' y <- X * 2 + rnorm(n, 0, 0.5)
+#' ind1 <- as.numeric(seq_len(n) <= 20)
+#' ind2 <- as.numeric(seq_len(n) > 20 & seq_len(n) <= 40)
+#' ind3 <- as.numeric(seq_len(n) > 40)
+#' res <- concentratedOLS3(y, X, ind1, ind2, ind3)
+#' res$beta1
+#' res$beta2
+#' res$beta3
 #' @export
 concentratedOLS3 <- function(y_dm, X_dm, ind1, ind2, ind3) {
   n_obs <- length(y_dm); n_vars <- ncol(X_dm)
@@ -254,6 +295,14 @@ concentratedOLS3 <- function(y_dm, X_dm, ind1, ind2, ind3) {
 #' @param buffer Logical
 #' @param id Panel identifiers (required when \code{buffer = TRUE})
 #' @return Numeric SSR (Inf if any regime is too small)
+#' @examples
+#' set.seed(1)
+#' n <- 10; tt <- 5
+#' df <- data.frame(id = rep(1:n, each = tt), time = rep(1:tt, n),
+#'                  x1 = rnorm(n * tt), q = rnorm(n * tt))
+#' df$y <- 1.5 * df$x1 + (df$q > 0) * (-2 * df$x1) + rnorm(n * tt, 0, 0.5)
+#' dm <- removeFE(df$y, as.matrix(df$x1), df$id)
+#' computeSSR(dm$y_dm, dm$X_dm, g_vec = 0, q = df$q)
 #' @export
 computeSSR <- function(y_dm, X_dm, g_vec, q, buffer = FALSE, id = NULL) {
   if (!buffer) {
@@ -289,6 +338,11 @@ computeSSR <- function(y_dm, X_dm, g_vec, q, buffer = FALSE, id = NULL) {
 #'     fails.  Correct ordering is critical for hysteresis (buffer) regime
 #'     assignment, where the current regime depends on the previous observation.
 #' }
+#' @examples
+#' df <- data.frame(id   = rep(1:5, each = 4),
+#'                  time = rep(1:4, 5),
+#'                  y    = rnorm(20))
+#' validatePanel(df, id = "id", time = "time")
 #' @export
 validatePanel <- function(data, id, time) {
   if (!id   %in% names(data)) stop(paste("ID variable",   id,   "not found in data"))
@@ -329,6 +383,11 @@ validatePanel <- function(data, id, time) {
 #' @param resid Residual vector
 #' @param type One of "HC0", "HC1", "HC2", "HC3"
 #' @return Symmetric p x p variance-covariance matrix
+#' @examples
+#' set.seed(1)
+#' X     <- matrix(rnorm(60), ncol = 2)
+#' resid <- rnorm(30)
+#' robustVcov(X, resid, type = "HC3")
 #' @export
 robustVcov <- function(X, resid, type = "HC3") {
   if (is.vector(X)) X <- matrix(X, ncol = 1)
@@ -352,6 +411,11 @@ robustVcov <- function(X, resid, type = "HC3") {
 #' @param resid Residual vector
 #' @param type One of "HC0", "HC1", "HC2", "HC3"
 #' @return Vector of standard errors
+#' @examples
+#' set.seed(1)
+#' X     <- matrix(rnorm(60), ncol = 2)
+#' resid <- rnorm(30)
+#' robustSE(X, resid, type = "HC3")
 #' @importFrom stats df.residual
 #' @export
 robustSE <- function(X, resid, type = "HC3") {

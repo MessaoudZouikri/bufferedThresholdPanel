@@ -21,6 +21,18 @@ A \code{knitr_kable} object suitable for inclusion in R Markdown or
 Render the results as a \code{knitr::kable} table, which is useful inside
 R Markdown / Quarto documents.
 }
+\examples{
+\donttest{
+set.seed(1)
+n <- 10; tt <- 6
+df <- data.frame(id = rep(1:n, each = tt), time = rep(1:tt, n),
+                 x1 = rnorm(n * tt), q = rnorm(n * tt))
+df$y <- 1.5 * df$x1 + (df$q > 0) * (-2 * df$x1) + rnorm(n * tt, 0, 0.5)
+m <- bptr(y ~ x1, data = df, id = "id", time = "time", q = "q",
+          n_thresh = 1, grid_size = 30)
+if (requireNamespace("knitr", quietly = TRUE)) bptr_kable(m)
+}
+}
 \seealso{
 \code{\link{bptr_table}} for a \code{gt}-based table with richer
   formatting, \code{\link{bptr_latex}} for LaTeX export.

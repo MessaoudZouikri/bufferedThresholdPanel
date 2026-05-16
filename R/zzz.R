@@ -130,3 +130,4 @@ utils::globalVariables(c(
     "  Type vignette('bufferedThresholdPanel') for a worked example."
   )
 }
+

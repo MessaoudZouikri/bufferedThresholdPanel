@@ -245,15 +245,13 @@ cat("BTPD zone     : [", round(fit2$thresholds, 4), "]\n")
 ## Tidy output (broom integration)
 
 ```{r tidy}
-library(broom)
-
 # Coefficient table with 95% confidence intervals
-tidy(fit2, conf.int = TRUE)
+broom::tidy(fit2, conf.int = TRUE)
 ```
 
 ```{r glance}
 # Model-level fit statistics
-glance(fit2)
+broom::glance(fit2)
 ```
 
 ```{r threshold_tidy}
@@ -263,7 +261,7 @@ threshold_tidy(fit2)
 
 ```{r augment}
 # Add fitted values and regime classification to the data frame
-aug <- augment(fit2)
+aug <- broom::augment(fit2)
 head(aug[, c("id", "time", "q", "y", ".fitted", ".resid", ".regime")])
 ```
 

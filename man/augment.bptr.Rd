@@ -26,3 +26,13 @@ The input data returned as a \code{\link[tibble]{tibble}} with three
 \description{
 Add fitted values, residuals, and regime classifications to the original data.
 }
+\examples{
+set.seed(1)
+n <- 10; tt <- 6
+df <- data.frame(id = rep(1:n, each = tt), time = rep(1:tt, n),
+                 x1 = rnorm(n * tt), q = rnorm(n * tt))
+df$y <- 1.5 * df$x1 + (df$q > 0) * (-2 * df$x1) + rnorm(n * tt, 0, 0.5)
+m <- bptr(y ~ x1, data = df, id = "id", time = "time", q = "q",
+          n_thresh = 1, grid_size = 30)
+head(broom::augment(m))
+}

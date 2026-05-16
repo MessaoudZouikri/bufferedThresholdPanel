@@ -4,27 +4,44 @@
 \alias{threshold_tidy}
 \title{Extract Threshold Estimates with Confidence Intervals}
 \usage{
-threshold_tidy(x, conf.level = 0.95)
+threshold_tidy(x, conf.level = 0.95, boot = NULL)
 }
 \arguments{
 \item{x}{A \code{bptr} object}
 
 \item{conf.level}{Confidence level (default 0.95)}
+
+\item{boot}{An optional \code{bptr_bootstrap} object returned by
+\code{\link{bptr_bootstrap}}. When supplied, bootstrap percentile CIs are
+computed from it. Takes priority over \code{x$bootstrap} if both are
+present.}
 }
 \value{
 A tibble with columns:
 \describe{
   \item{threshold_id}{Integer threshold identifier}
   \item{estimate}{Threshold estimate}
-  \item{conf.low}{Lower confidence bound}
-  \item{conf.high}{Upper confidence bound}
+  \item{conf.low}{Lower confidence bound (equals \code{estimate} when no CI
+    information is available)}
+  \item{conf.high}{Upper confidence bound (equals \code{estimate} when no CI
+    information is available)}
   \item{n_regime1}{Observations in regime 1 (or lower regimes)}
   \item{n_regime2}{Observations in regime 2 (or higher regimes)}
 }
 }
 \description{
 Extract threshold parameter estimates together with confidence intervals.
-When LR-inversion information is present on the model object it is used;
-otherwise bootstrap quantiles are used if available; finally a point-only
-fallback is returned.
+Priority order: LR-inversion (when available on the model object), then
+bootstrap percentile CIs (via \code{boot} argument or \code{x$bootstrap}),
+then a point-only fallback.
+}
+\examples{
+set.seed(1)
+n <- 10; tt <- 6
+df <- data.frame(id = rep(1:n, each = tt), time = rep(1:tt, n),
+                 x1 = rnorm(n * tt), q = rnorm(n * tt))
+df$y <- 1.5 * df$x1 + (df$q > 0) * (-2 * df$x1) + rnorm(n * tt, 0, 0.5)
+m <- bptr(y ~ x1, data = df, id = "id", time = "time", q = "q",
+          n_thresh = 1, grid_size = 30)
+threshold_tidy(m)
 }

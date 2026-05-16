@@ -22,6 +22,16 @@
 #'   \item{conf.low, conf.high}{Confidence interval bounds (if conf.int = TRUE)}
 #' }
 #'
+#' @examples
+#' set.seed(1)
+#' n <- 10; tt <- 6
+#' df <- data.frame(id = rep(1:n, each = tt), time = rep(1:tt, n),
+#'                  x1 = rnorm(n * tt), q = rnorm(n * tt))
+#' df$y <- 1.5 * df$x1 + (df$q > 0) * (-2 * df$x1) + rnorm(n * tt, 0, 0.5)
+#' m <- bptr(y ~ x1, data = df, id = "id", time = "time", q = "q",
+#'           n_thresh = 1, grid_size = 30)
+#' broom::tidy(m)
+#' broom::tidy(m, conf.int = TRUE)
 #' @importFrom broom tidy
 #' @importFrom tibble tibble
 #' @importFrom stats qt pt
@@ -69,29 +79,43 @@ tidy.bptr <- function(x, conf.int = FALSE, conf.level = 0.95, ...) {
 #'
 #' @description
 #' Extract threshold parameter estimates together with confidence intervals.
-#' When LR-inversion information is present on the model object it is used;
-#' otherwise bootstrap quantiles are used if available; finally a point-only
-#' fallback is returned.
+#' Priority order: LR-inversion (when available on the model object), then
+#' bootstrap percentile CIs (via \code{boot} argument or \code{x$bootstrap}),
+#' then a point-only fallback.
 #'
 #' @param x A \code{bptr} object
 #' @param conf.level Confidence level (default 0.95)
+#' @param boot An optional \code{bptr_bootstrap} object returned by
+#'   \code{\link{bptr_bootstrap}}. When supplied, bootstrap percentile CIs are
+#'   computed from it. Takes priority over \code{x$bootstrap} if both are
+#'   present.
 #'
 #' @return A tibble with columns:
 #' \describe{
 #'   \item{threshold_id}{Integer threshold identifier}
 #'   \item{estimate}{Threshold estimate}
-#'   \item{conf.low}{Lower confidence bound}
-#'   \item{conf.high}{Upper confidence bound}
+#'   \item{conf.low}{Lower confidence bound (equals \code{estimate} when no CI
+#'     information is available)}
+#'   \item{conf.high}{Upper confidence bound (equals \code{estimate} when no CI
+#'     information is available)}
 #'   \item{n_regime1}{Observations in regime 1 (or lower regimes)}
 #'   \item{n_regime2}{Observations in regime 2 (or higher regimes)}
 #' }
 #'
+#' @examples
+#' set.seed(1)
+#' n <- 10; tt <- 6
+#' df <- data.frame(id = rep(1:n, each = tt), time = rep(1:tt, n),
+#'                  x1 = rnorm(n * tt), q = rnorm(n * tt))
+#' df$y <- 1.5 * df$x1 + (df$q > 0) * (-2 * df$x1) + rnorm(n * tt, 0, 0.5)
+#' m <- bptr(y ~ x1, data = df, id = "id", time = "time", q = "q",
+#'           n_thresh = 1, grid_size = 30)
+#' threshold_tidy(m)
 #' @importFrom tibble tibble
 #' @importFrom stats quantile qchisq
 #' @export
-threshold_tidy <- function(x, conf.level = 0.95) {
+threshold_tidy <- function(x, conf.level = 0.95, boot = NULL) {
 
-  # Use 'thresholds' field (aligned with bptr result object)
   thresh  <- x$thresholds
   n_t     <- length(thresh)
   alpha   <- 1 - conf.level
@@ -99,36 +123,45 @@ threshold_tidy <- function(x, conf.level = 0.95) {
   result <- tibble::tibble(
     threshold_id = seq_len(n_t),
     estimate     = thresh,
-    conf.low     = thresh,    # will be overwritten if CI info available
+    conf.low     = thresh,
     conf.high    = thresh
   )
 
-  # LR-inversion confidence intervals
+  # TODO (deferred): LR-inversion confidence intervals — Hansen (1999, Sec. 3).
+  # bptr() would need to store the SSR profile over the threshold grid:
+  #   x$lr_grid[[i]]     : LR statistics at each grid point for threshold i
+  #   x$grid_points[[i]] : corresponding threshold candidates
+  # Confidence set: { gamma : LR(gamma) <= qchisq(conf.level, df = 1) }.
+  # The grid loop in bptr() already evaluates SSR at every candidate —
+  # retaining those values is the only missing step.
   if (!is.null(x$lr_test) && !is.null(x$lr_grid)) {
     crit <- stats::qchisq(conf.level, df = 1)
     for (i in seq_len(n_t)) {
-      lr_vals   <- x$lr_grid[[i]]
-      grd_pts   <- x$grid_points[[i]]
-      in_set    <- lr_vals <= crit
+      lr_vals  <- x$lr_grid[[i]]
+      grd_pts  <- x$grid_points[[i]]
+      in_set   <- lr_vals <= crit
       if (any(in_set)) {
         result$conf.low[i]  <- min(grd_pts[in_set])
         result$conf.high[i] <- max(grd_pts[in_set])
       }
     }
 
-  # Bootstrap percentile confidence intervals
-  } else if (!is.null(x$bootstrap) && !is.null(x$bootstrap$gamma_boot)) {
-    boot_g <- x$bootstrap$gamma_boot
-    if (!is.matrix(boot_g)) boot_g <- matrix(boot_g, ncol = 1)
-    for (i in seq_len(n_t)) {
-      bv                  <- boot_g[, min(i, ncol(boot_g))]
-      result$conf.low[i]  <- stats::quantile(bv, alpha / 2,     na.rm = TRUE)
-      result$conf.high[i] <- stats::quantile(bv, 1 - alpha / 2, na.rm = TRUE)
+  # Bootstrap percentile confidence intervals.
+  # Supply a bptr_bootstrap object via `boot`, or attach one to the model as
+  # fit$bootstrap <- boot before calling threshold_tidy().
+  } else {
+    boot_src <- if (!is.null(boot)) boot else x$bootstrap
+    if (!is.null(boot_src) && !is.null(boot_src$gamma_boot)) {
+      boot_g <- boot_src$gamma_boot
+      if (!is.matrix(boot_g)) boot_g <- matrix(boot_g, ncol = 1)
+      for (i in seq_len(n_t)) {
+        bv                  <- boot_g[, min(i, ncol(boot_g))]
+        result$conf.low[i]  <- stats::quantile(bv, alpha / 2,     na.rm = TRUE)
+        result$conf.high[i] <- stats::quantile(bv, 1 - alpha / 2, na.rm = TRUE)
+      }
     }
   }
-  # else: conf.low / conf.high stay at point estimate (no CI info)
 
-  # Regime sizes
   rc <- x$regime_classification
   result$n_regime1 <- vapply(seq_len(n_t), function(i)
     sum(rc <= i,  na.rm = TRUE), integer(1L))
@@ -176,6 +209,15 @@ threshold_tidy <- function(x, conf.level = 0.95) {
 #' only comparable across models estimated on the same dataset with the same
 #' fixed-effects structure.
 #'
+#' @examples
+#' set.seed(1)
+#' n <- 10; tt <- 6
+#' df <- data.frame(id = rep(1:n, each = tt), time = rep(1:tt, n),
+#'                  x1 = rnorm(n * tt), q = rnorm(n * tt))
+#' df$y <- 1.5 * df$x1 + (df$q > 0) * (-2 * df$x1) + rnorm(n * tt, 0, 0.5)
+#' m <- bptr(y ~ x1, data = df, id = "id", time = "time", q = "q",
+#'           n_thresh = 1, grid_size = 30)
+#' broom::glance(m)
 #' @importFrom broom glance
 #' @importFrom tibble tibble
 #' @method glance bptr
@@ -224,6 +266,15 @@ glance.bptr <- function(x, ...) {
 #'   first \code{x$n_obs} rows receive model output; the remainder carry
 #'   \code{NA}.
 #'
+#' @examples
+#' set.seed(1)
+#' n <- 10; tt <- 6
+#' df <- data.frame(id = rep(1:n, each = tt), time = rep(1:tt, n),
+#'                  x1 = rnorm(n * tt), q = rnorm(n * tt))
+#' df$y <- 1.5 * df$x1 + (df$q > 0) * (-2 * df$x1) + rnorm(n * tt, 0, 0.5)
+#' m <- bptr(y ~ x1, data = df, id = "id", time = "time", q = "q",
+#'           n_thresh = 1, grid_size = 30)
+#' head(broom::augment(m))
 #' @importFrom broom augment
 #' @importFrom tibble as_tibble
 #' @method augment bptr

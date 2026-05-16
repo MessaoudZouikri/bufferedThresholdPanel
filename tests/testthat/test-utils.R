@@ -253,6 +253,33 @@ test_that("concentratedOLS3() fitted + resid = y", {
   expect_equal(ols3$fitted + ols3$resid, y, tolerance = 1e-10)
 })
 
+test_that("concentratedOLS() warns on singular matrix within a regime", {
+  n    <- 20L
+  X    <- cbind(rnorm(n), rnorm(n))
+  X[11:20, 2L] <- X[11:20, 1L]
+  y    <- rnorm(n)
+  ind1 <- rep(c(1L, 0L), each = 10L)
+  ind2 <- rep(c(0L, 1L), each = 10L)
+  expect_warning(
+    concentratedOLS(y, X, ind1, ind2),
+    "Singular matrix"
+  )
+})
+
+test_that("concentratedOLS3() warns on singular matrix within a regime", {
+  n    <- 30L
+  X    <- cbind(rnorm(n), rnorm(n))
+  X[21:30, 2L] <- X[21:30, 1L]
+  y    <- rnorm(n)
+  ind1 <- rep(c(1L, 0L, 0L), each = 10L)
+  ind2 <- rep(c(0L, 1L, 0L), each = 10L)
+  ind3 <- rep(c(0L, 0L, 1L), each = 10L)
+  expect_warning(
+    concentratedOLS3(y, X, ind1, ind2, ind3),
+    "Singular matrix"
+  )
+})
+
 # ================================================================
 # robustSE()
 # ================================================================
@@ -303,6 +330,58 @@ test_that("robustSE() returns Inf when system is underdetermined (n <= k)", {
   r <- c(0.1, -0.1)
   se <- robustSE(X, r)
   expect_true(all(is.infinite(se)))
+})
+
+# ================================================================
+# robustVcov() — direct tests
+# ================================================================
+
+test_that("robustVcov() returns a symmetric matrix", {
+  set.seed(41L)
+  n <- 30L; k <- 3L
+  X <- matrix(rnorm(n * k), nrow = n, ncol = k)
+  r <- rnorm(n)
+  for (type in c("HC0", "HC1", "HC2", "HC3")) {
+    V <- robustVcov(X, r, type = type)
+    expect_equal(dim(V), c(k, k), label = sprintf("dim %s", type))
+    expect_equal(V, t(V), tolerance = 1e-12, label = sprintf("symmetric %s", type))
+    expect_true(all(diag(V) > 0), label = sprintf("positive diag %s", type))
+  }
+})
+
+test_that("robustVcov() diag equals robustSE()^2 for all HC types", {
+  set.seed(42L)
+  n <- 30L; k <- 3L
+  X <- matrix(rnorm(n * k), nrow = n, ncol = k)
+  r <- rnorm(n)
+  for (type in c("HC0", "HC1", "HC2", "HC3")) {
+    V <- robustVcov(X, r, type = type)
+    se <- robustSE(X, r, type = type)
+    expect_equal(diag(V), se^2, tolerance = 1e-12,
+                 label = sprintf("diag(V) == se^2 %s", type))
+  }
+})
+
+test_that("robustVcov() returns zero matrix for empty input", {
+  X0 <- matrix(numeric(0L), nrow = 0L, ncol = 2L)
+  r0 <- numeric(0L)
+  V <- robustVcov(X0, r0)
+  expect_equal(dim(V), c(2L, 2L))
+  expect_true(all(V == 0))
+})
+
+test_that("robustVcov() returns Inf matrix when n <= k", {
+  X <- matrix(c(1, 2, 3, 4), nrow = 2L, ncol = 2L)
+  r <- c(0.1, -0.1)
+  V <- robustVcov(X, r)
+  expect_true(all(is.infinite(V)))
+})
+
+test_that("robustVcov() returns Inf matrix for singular X", {
+  X <- cbind(1:5, 2:6, (1:5) + 1L)
+  r <- rnorm(5)
+  V <- robustVcov(X, r)
+  expect_true(all(is.infinite(V)))
 })
 
 # ================================================================

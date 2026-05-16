@@ -19,3 +19,9 @@ Vector of standard errors
 \description{
 Robust Standard Errors (HC sandwich estimator)
 }
+\examples{
+set.seed(1)
+X     <- matrix(rnorm(60), ncol = 2)
+resid <- rnorm(30)
+robustSE(X, resid, type = "HC3")
+}

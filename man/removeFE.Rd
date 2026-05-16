@@ -31,3 +31,11 @@ of \code{X} are excluded from their unit's mean but their demeaned value
 becomes \code{NA}; use \code{\link{validatePanel}} to detect missing values
 before fitting.
 }
+\examples{
+y  <- c(1, 2, 3, 4, 5, 6)
+X  <- matrix(c(1, 2, 1, 2, 1, 2), ncol = 1)
+id <- c(1, 1, 1, 2, 2, 2)
+dm <- removeFE(y, X, id)
+dm$y_dm
+dm$X_dm
+}

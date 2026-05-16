@@ -22,3 +22,9 @@ standard errors.  Used internally by \code{\link{robustSE}} and stored
 per-regime in \code{bptr} objects so that \code{\link{vcov.bptr}} can
 produce a correct block-diagonal variance matrix.
 }
+\examples{
+set.seed(1)
+X     <- matrix(rnorm(60), ncol = 2)
+resid <- rnorm(30)
+robustVcov(X, resid, type = "HC3")
+}

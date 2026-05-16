@@ -8,5 +8,9 @@
 ^data-raw/.*
 ^prompt\.txt$
 ^\.git$
+^\.github$
 ^\.DS_Store$
+^\._
 ^AGENTS\.md$
+Rplots\.pdf$
+^install\.ps1$

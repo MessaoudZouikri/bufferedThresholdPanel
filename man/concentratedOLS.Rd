@@ -29,3 +29,14 @@ are returned for that regime.  If the sub-matrix is exactly identified or
 over-determined but numerically singular, \code{solve()} is wrapped in
 \code{tryCatch}: a warning is issued and zero coefficients are returned.
 }
+\examples{
+set.seed(1)
+n <- 40
+X <- matrix(rnorm(n), ncol = 1)
+y <- X * 2 + rnorm(n, 0, 0.5)
+ind1 <- as.numeric(seq_len(n) <= 20)
+ind2 <- 1 - ind1
+res <- concentratedOLS(y, X, ind1, ind2)
+res$beta1
+res$beta2
+}

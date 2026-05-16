@@ -157,6 +157,14 @@ test_that("bptr() errors when grid_size_3 < 4 for 3-regime BTPD", {
   )
 })
 
+test_that("bptr() warns when grid_size > 50 with n_thresh = 2 and no grid_size_3", {
+  expect_warning(
+    bptr(y ~ x1, data = df_min, id = "id", time = "time", q = "q",
+         n_thresh = 2L, buffer = TRUE, grid_size = 100),
+    "capped at 50"
+  )
+})
+
 # ================================================================
 # bptr_test_23() — input validation
 # ================================================================
@@ -191,6 +199,13 @@ test_that("predict.bptr() errors when threshold variable is absent from newdata"
   fit <- bptr(y ~ x1, data = df_min, id = "id", time = "time", q = "q",
               n_thresh = 1L, buffer = FALSE, grid_size = 20L)
   bad <- df_min[, setdiff(names(df_min), "q")]
+  expect_error(predict(fit, newdata = bad), "not found in newdata")
+})
+
+test_that("predict.bptr() BTPD errors when ID column is absent from newdata", {
+  fit <- bptr(y ~ x1, data = df_min, id = "id", time = "time", q = "q",
+              n_thresh = 1L, buffer = TRUE, grid_size = 20L)
+  bad <- df_min[, setdiff(names(df_min), "id")]
   expect_error(predict(fit, newdata = bad), "not found in newdata")
 })
 
@@ -279,4 +294,15 @@ test_that("bptr_kable() errors informatively when knitr is not installed", {
   fit <- bptr(y ~ x1, data = df_min, id = "id", time = "time", q = "q",
               n_thresh = 1L, buffer = FALSE, grid_size = 20L)
   expect_error(bptr_kable(fit), "knitr")
+})
+
+# ================================================================
+# .onAttach() — startup message
+# ================================================================
+
+test_that(".onAttach() displays a startup message with references", {
+  expect_message(
+    bufferedThresholdPanel:::.onAttach(),
+    "bufferedThresholdPanel"
+  )
 })

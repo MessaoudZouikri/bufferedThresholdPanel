@@ -353,8 +353,10 @@ regimeAnalysisServer <- function(id, model, data_df,
 
     output$regime_plot <- renderPlotly({
       req(model(), data_df())
-      df       <- data_df()
-      n_use    <- model()$n_obs
+      df    <- data_df()
+      n_use <- model()$n_obs
+      req(q_var() %in% names(df),
+          length(model()$regime_classification) == n_use)
       use_time <- !is.null(input$regime_plot_x) &&
         input$regime_plot_x == "time" &&
         time_var() %in% names(df)
@@ -379,10 +381,11 @@ regimeAnalysisServer <- function(id, model, data_df,
       else   if (model()$buffer && length(thr) == 4) c("rL1", "rU1", "rL2", "rU2")
       else   paste0("\u03b3", seq_along(thr))
 
+      x_range <- range(df_plot$x_val)
       for (k in seq_along(thr)) {
-        p <- p |> add_lines(
-          x       = unname(range(df_plot$x_val)),
-          y       = rep(unname(thr[k]), 2),
+        p <- p |> add_segments(
+          x    = x_range[1], xend = x_range[2],
+          y    = unname(thr[k]), yend = unname(thr[k]),
           inherit = FALSE,
           line    = list(color = "black", dash = "dash", width = 1.5),
           name    = lbls[k], showlegend = TRUE
@@ -395,6 +398,9 @@ regimeAnalysisServer <- function(id, model, data_df,
       req(model(), data_df())
       df    <- data_df()
       n_use <- model()$n_obs
+      req(dep_var() %in% names(df),
+          q_var()   %in% names(df),
+          length(model()$regime_classification) == n_use)
       df_plot <- data.frame(
         y_val  = df[[dep_var()]][seq_len(n_use)],
         x_val  = df[[q_var()]][seq_len(n_use)],

@@ -29,6 +29,18 @@
 #' @seealso \code{\link{bptr_latex}} for LaTeX export,
 #'   \code{\link{bptr_kable}} for R Markdown / Quarto output,
 #'   \code{\link{bptr_shiny}} for the interactive explorer.
+#' @examples
+#' \donttest{
+#' set.seed(1)
+#' n <- 10; tt <- 6
+#' df <- data.frame(id = rep(1:n, each = tt), time = rep(1:tt, n),
+#'                  x1 = rnorm(n * tt), q = rnorm(n * tt))
+#' df$y <- 1.5 * df$x1 + (df$q > 0) * (-2 * df$x1) + rnorm(n * tt, 0, 0.5)
+#' m <- bptr(y ~ x1, data = df, id = "id", time = "time", q = "q",
+#'           n_thresh = 1, grid_size = 30)
+#' bptr_table(m)
+#' bptr_table(m, style = "AER", title = "PTR Results")
+#' }
 #' @import gt
 #' @importFrom dplyr mutate case_when
 #' @importFrom tibble tibble
@@ -166,6 +178,19 @@ bptr_table <- function(x, digits = 3, stars = TRUE, title = NULL,
 #'
 #' @seealso \code{\link{bptr_table}} for the underlying \code{gt_tbl} object,
 #'   \code{\link{bptr_kable}} for R Markdown / Quarto output.
+#' @examples
+#' \donttest{
+#' set.seed(1)
+#' n <- 10; tt <- 6
+#' df <- data.frame(id = rep(1:n, each = tt), time = rep(1:tt, n),
+#'                  x1 = rnorm(n * tt), q = rnorm(n * tt))
+#' df$y <- 1.5 * df$x1 + (df$q > 0) * (-2 * df$x1) + rnorm(n * tt, 0, 0.5)
+#' m <- bptr(y ~ x1, data = df, id = "id", time = "time", q = "q",
+#'           n_thresh = 1, grid_size = 30)
+#' tex <- bptr_latex(m)
+#' tmp <- tempfile(fileext = ".tex")
+#' bptr_latex(m, file = tmp)
+#' }
 #' @export
 bptr_latex <- function(x, file = NULL, ...) {
   tbl <- bptr_table(x, ...)
@@ -194,6 +219,17 @@ bptr_latex <- function(x, file = NULL, ...) {
 #'
 #' @seealso \code{\link{bptr_table}} for a \code{gt}-based table with richer
 #'   formatting, \code{\link{bptr_latex}} for LaTeX export.
+#' @examples
+#' \donttest{
+#' set.seed(1)
+#' n <- 10; tt <- 6
+#' df <- data.frame(id = rep(1:n, each = tt), time = rep(1:tt, n),
+#'                  x1 = rnorm(n * tt), q = rnorm(n * tt))
+#' df$y <- 1.5 * df$x1 + (df$q > 0) * (-2 * df$x1) + rnorm(n * tt, 0, 0.5)
+#' m <- bptr(y ~ x1, data = df, id = "id", time = "time", q = "q",
+#'           n_thresh = 1, grid_size = 30)
+#' if (requireNamespace("knitr", quietly = TRUE)) bptr_kable(m)
+#' }
 #' @export
 bptr_kable <- function(x, digits = 3, ...) {
   if (!requireNamespace("knitr", quietly = TRUE)) {
@@ -260,6 +296,10 @@ bptr_kable <- function(x, digits = 3, ...) {
 #'
 #' @seealso \code{\link{bptr}} for the underlying estimation function,
 #'   \code{\link{bptr_table}} for programmatic publication-ready tables.
+#' @examples
+#' \dontrun{
+#' bptr_shiny()
+#' }
 #' @export
 bptr_shiny <- function(...) {
   if (!requireNamespace("shiny", quietly = TRUE))

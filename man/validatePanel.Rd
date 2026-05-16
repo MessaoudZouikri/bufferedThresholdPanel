@@ -32,3 +32,9 @@ Two additional checks are performed beyond column-presence validation:
     assignment, where the current regime depends on the previous observation.
 }
 }
+\examples{
+df <- data.frame(id   = rep(1:5, each = 4),
+                 time = rep(1:4, 5),
+                 y    = rnorm(20))
+validatePanel(df, id = "id", time = "time")
+}

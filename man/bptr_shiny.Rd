@@ -47,6 +47,11 @@ Required packages (in addition to \pkg{bufferedThresholdPanel}):
 \code{install.packages(c("shiny","bslib","plotly","DT","dplyr","tidyr",
   "readr","readxl","gt","shinycssloaders","shinyjs"))}.
 }
+\examples{
+\dontrun{
+bptr_shiny()
+}
+}
 \seealso{
 \code{\link{bptr}} for the underlying estimation function,
   \code{\link{bptr_table}} for programmatic publication-ready tables.

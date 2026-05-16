@@ -23,3 +23,13 @@ Extracts the wide-format regime classification table from a fitted
 time periods (years), and each cell gives the regime (1, 2, or 3) assigned
 to that unit-period observation.
 }
+\examples{
+set.seed(1)
+n <- 10; tt <- 6
+df <- data.frame(id = rep(1:n, each = tt), time = rep(1:tt, n),
+                 x1 = rnorm(n * tt), q = rnorm(n * tt))
+df$y <- 1.5 * df$x1 + (df$q > 0) * (-2 * df$x1) + rnorm(n * tt, 0, 0.5)
+m <- bptr(y ~ x1, data = df, id = "id", time = "time", q = "q",
+          n_thresh = 1, grid_size = 30)
+regime_table(m)
+}

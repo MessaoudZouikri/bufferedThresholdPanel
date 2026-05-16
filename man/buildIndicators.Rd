@@ -17,3 +17,7 @@ Numeric vector of indicators (1 if q <= gamma, 0 otherwise)
 \description{
 Build Threshold Indicators
 }
+\examples{
+q <- c(-1.2, 0.3, 0.7, -0.5, 1.1)
+buildIndicators(q, gamma = 0.5)
+}

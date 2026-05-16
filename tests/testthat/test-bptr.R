@@ -137,6 +137,24 @@ test_that("plot() returns a ggplot object invisibly", {
   expect_s3_class(p, "ggplot")
 })
 
+test_that("regime_table() returns a data frame with correct dimensions", {
+  fit <- bptr(y ~ x1 + x2, data = df,
+              id = "id", time = "time", q = "q",
+              n_thresh = 1, buffer = TRUE)
+  rt <- regime_table(fit)
+  expect_s3_class(rt, "data.frame")
+  expect_equal(nrow(rt), fit$n_groups)
+  expect_equal(ncol(rt), fit$panel_info$n_periods)
+  expect_true(all(unlist(rt) %in% 1:2))
+})
+
+test_that("regime_table() matches internal regime_table field", {
+  fit <- bptr(y ~ x1 + x2, data = df,
+              id = "id", time = "time", q = "q",
+              n_thresh = 1, buffer = TRUE)
+  expect_identical(regime_table(fit), fit$regime_table)
+})
+
 # ================================================================
 # 3. broom integration
 # ================================================================
@@ -185,6 +203,19 @@ test_that("threshold_tidy() returns a data frame with threshold estimates", {
   expect_true(is.data.frame(tt))
   expect_true("estimate" %in% names(tt))
   expect_equal(nrow(tt), 2L)                  # rL, rU
+})
+
+test_that("threshold_tidy() returns bootstrap CIs when boot argument is supplied", {
+  skip_on_cran()
+  fit  <- bptr(y ~ x1 + x2, data = df,
+               id = "id", time = "time", q = "q",
+               n_thresh = 1, buffer = TRUE)
+  boot <- bptr_bootstrap(fit, n_boot = 19L, seed = 42L)
+  tt   <- threshold_tidy(fit, boot = boot)
+
+  expect_equal(nrow(tt), 2L)
+  expect_true(all(tt$conf.low  <= tt$conf.high))         # monotonicity
+  expect_false(identical(tt$conf.low, tt$estimate))      # bootstrap path was used
 })
 
 # ================================================================

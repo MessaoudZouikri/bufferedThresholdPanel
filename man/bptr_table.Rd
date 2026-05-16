@@ -46,6 +46,19 @@ Coefficient estimates and their standard errors (or t-statistics) are
 arranged in alternating rows per variable, one column pair per regime.
 Threshold estimates appear as a source note below the table body.
 }
+\examples{
+\donttest{
+set.seed(1)
+n <- 10; tt <- 6
+df <- data.frame(id = rep(1:n, each = tt), time = rep(1:tt, n),
+                 x1 = rnorm(n * tt), q = rnorm(n * tt))
+df$y <- 1.5 * df$x1 + (df$q > 0) * (-2 * df$x1) + rnorm(n * tt, 0, 0.5)
+m <- bptr(y ~ x1, data = df, id = "id", time = "time", q = "q",
+          n_thresh = 1, grid_size = 30)
+bptr_table(m)
+bptr_table(m, style = "AER", title = "PTR Results")
+}
+}
 \seealso{
 \code{\link{bptr_latex}} for LaTeX export,
   \code{\link{bptr_kable}} for R Markdown / Quarto output,

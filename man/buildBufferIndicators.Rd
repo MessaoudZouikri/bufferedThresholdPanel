@@ -45,3 +45,8 @@ This uses \emph{strict} less-than (\code{<}) to match the original Matlab
 implementation, where exact equidistance defaults to the lower regime
 (more conservative initialisation).
 }
+\examples{
+q  <- c(-1.5, -0.3, 0.1, 0.5, 1.2, 0.0, 0.8, -0.8)
+id <- c(  1,    1,   1,   1,   1,   2,   2,    2)
+buildBufferIndicators(q, g1 = -0.2, g2 = 0.6, prev_d = NULL, id = id)
+}

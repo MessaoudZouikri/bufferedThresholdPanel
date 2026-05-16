@@ -25,3 +25,12 @@ Numeric SSR (Inf if any regime is too small)
 \description{
 Compute SSR for 2-Regime Grid Search
 }
+\examples{
+set.seed(1)
+n <- 10; tt <- 5
+df <- data.frame(id = rep(1:n, each = tt), time = rep(1:tt, n),
+                 x1 = rnorm(n * tt), q = rnorm(n * tt))
+df$y <- 1.5 * df$x1 + (df$q > 0) * (-2 * df$x1) + rnorm(n * tt, 0, 0.5)
+dm <- removeFE(df$y, as.matrix(df$x1), df$id)
+computeSSR(dm$y_dm, dm$X_dm, g_vec = 0, q = df$q)
+}

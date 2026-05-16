@@ -56,3 +56,9 @@ The strict less-than (\code{<}) ensures that at exact equidistance the
 tie resolves to the \emph{upper} regime, matching the conservative
 initialisation rule of the original Matlab implementation.
 }
+\examples{
+q  <- c(-2, -0.5, 0, 0.5, 1.2, 1.8, 2.5)
+id <- rep(1, 7)
+buildBufferIndicators3(q, rL1 = -0.3, rU1 = 0.3, rL2 = 1.0, rU2 = 1.5,
+                       id = id)
+}

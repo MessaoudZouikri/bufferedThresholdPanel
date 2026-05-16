@@ -102,7 +102,7 @@ Useful links:
 Authors:
 \itemize{
   \item Messaoud Zouikri \email{mzouikri@parisnanterre.fr} (\href{https://orcid.org/0000-0002-6253-9074}{ORCID})
-  \item Faycal Hamdi \email{faycal.hamdi@univ-constantine2.dz}
+  \item Faycal Hamdi \email{faycal.hamdi@usthb.edu.dz}
   \item Said Souam
 }
 
