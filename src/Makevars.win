@@ -1,1 +1,2 @@
 CXX_STD = CXX17
+OBJECTS = RcppExports.o buffer_indicators.o
