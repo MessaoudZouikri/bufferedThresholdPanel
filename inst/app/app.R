@@ -703,6 +703,7 @@ diagnosticsServer <- function(id, model) {
               marker = list(size = 4, color = "#2c5282", opacity = 0.6),
               name = "Residuals") |>
         add_lines(x = rng, y = rng,
+                  inherit = FALSE,
                   line = list(color = "red", dash = "dot"),
                   name = "45\u00b0 line") |>
         layout(title = "Normal Q-Q Plot",
