@@ -223,15 +223,18 @@ modelResultsServer <- function(id, model, model_coefs, q_var) {
             name    = paste("Regime", r)
           )
       }
-      p |> add_lines(
-        x = c(0, 0), y = c(0.5, n_var + 0.5),
-        line = list(color = "grey", dash = "dot"), showlegend = FALSE
-      ) |>
+      p |>
         layout(
           title  = "Coefficient Estimates with 95% CI",
           xaxis  = list(title = "Coefficient"),
           yaxis  = list(title = "", autorange = "reversed"),
-          legend = list(orientation = "h", y = -0.15)
+          legend = list(orientation = "h", y = -0.15),
+          shapes = list(list(
+            type = "line",
+            x0 = 0, x1 = 0, xref = "x",
+            y0 = 0, y1 = 1, yref = "paper",
+            line = list(color = "grey", dash = "dot", width = 1)
+          ))
         )
     })
 
@@ -679,14 +682,15 @@ diagnosticsServer <- function(id, model) {
       plot_ly(df_d, x = ~fitted, y = ~resid, color = ~regime,
               type = "scatter", mode = "markers",
               marker = list(size = 4, opacity = 0.55)) |>
-        add_segments(x = min(df_d$fitted), xend = max(df_d$fitted),
-                     y = 0, yend = 0,
-                     inherit = FALSE,
-                     line = list(color = "grey40", dash = "dash", width = 1),
-                     showlegend = FALSE) |>
-        layout(title = "Residuals vs Fitted",
-               xaxis = list(title = "Fitted values"),
-               yaxis = list(title = "Residuals"))
+        layout(title  = "Residuals vs Fitted",
+               xaxis  = list(title = "Fitted values"),
+               yaxis  = list(title = "Residuals"),
+               shapes = list(list(
+                 type = "line",
+                 x0 = 0, x1 = 1, xref = "paper",
+                 y0 = 0, y1 = 0, yref = "y",
+                 line = list(color = "grey40", dash = "dash", width = 1)
+               )))
     }) |> bindCache(model())
 
     output$diag_qq <- renderPlotly({
