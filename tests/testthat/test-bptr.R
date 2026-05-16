@@ -205,6 +205,16 @@ test_that("threshold_tidy() returns a data frame with threshold estimates", {
   expect_equal(nrow(tt), 2L)                  # rL, rU
 })
 
+test_that("threshold_tidy() converts vector gamma_boot to matrix (defensive guard)", {
+  fit <- bptr(y ~ x1 + x2, data = df,
+              id = "id", time = "time", q = "q",
+              n_thresh = 1, buffer = FALSE)
+  fake_boot <- list(gamma_boot = c(-0.2, 0.0, 0.1, 0.3))  # vector, not matrix
+  tt <- threshold_tidy(fit, boot = fake_boot)
+  expect_true(is.data.frame(tt))
+  expect_true(all(tt$conf.low <= tt$conf.high))
+})
+
 test_that("threshold_tidy() returns bootstrap CIs when boot argument is supplied", {
   skip_on_cran()
   fit  <- bptr(y ~ x1 + x2, data = df,
