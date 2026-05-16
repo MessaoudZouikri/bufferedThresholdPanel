@@ -368,30 +368,33 @@ regimeAnalysisServer <- function(id, model, data_df,
       )
       x_title <- if (use_time) time_var() else "Observation index"
 
-      p <- plot_ly(df_plot, x = ~x_val, y = ~q_val, color = ~regime,
-                   type = "scatter", mode = "markers",
-                   marker = list(size = 4, opacity = 0.55)) |>
-        layout(title  = paste("Threshold variable:", q_var()),
-               xaxis  = list(title = x_title),
-               yaxis  = list(title = q_var()),
-               legend = list(title = list(text = "Regime")))
-
       thr  <- model()$thresholds
       lbls <- if (model()$buffer && length(thr) == 2) c("rL", "rU")
       else   if (model()$buffer && length(thr) == 4) c("rL1", "rU1", "rL2", "rU2")
       else   paste0("\u03b3", seq_along(thr))
 
-      x_range <- range(df_plot$x_val)
-      for (k in seq_along(thr)) {
-        p <- p |> add_segments(
-          x    = x_range[1], xend = x_range[2],
-          y    = unname(thr[k]), yend = unname(thr[k]),
-          inherit = FALSE,
-          line    = list(color = "black", dash = "dash", width = 1.5),
-          name    = lbls[k], showlegend = TRUE
-        )
-      }
-      p
+      shapes <- lapply(seq_along(thr), function(k) {
+        list(type = "line",
+             x0 = 0, x1 = 1, xref = "paper",
+             y0 = unname(thr[k]), y1 = unname(thr[k]),
+             line = list(color = "black", dash = "dash", width = 1.5))
+      })
+      annots <- lapply(seq_along(thr), function(k) {
+        list(x = 1, xref = "paper", xanchor = "left",
+             y = unname(thr[k]), yref = "y",
+             text = lbls[k], showarrow = FALSE,
+             font = list(size = 11, color = "black"))
+      })
+
+      plot_ly(df_plot, x = ~x_val, y = ~q_val, color = ~regime,
+              type = "scatter", mode = "markers",
+              marker = list(size = 4, opacity = 0.55)) |>
+        layout(title       = paste("Threshold variable:", q_var()),
+               xaxis       = list(title = x_title),
+               yaxis       = list(title = q_var()),
+               legend      = list(title = list(text = "Regime")),
+               shapes      = shapes,
+               annotations = annots)
     })
 
     output$dep_vs_q_plot <- renderPlotly({
