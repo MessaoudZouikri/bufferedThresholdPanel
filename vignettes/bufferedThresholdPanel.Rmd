@@ -195,6 +195,10 @@ round(vcov(fit2), 6)
 
 # In-sample prediction (identical to fitted values)
 head(round(predict(fit2), 4))
+
+# Regime classification matrix (units × periods)
+# Each cell shows the regime (1 or 2) assigned to that unit-period pair
+regime_table(fit2)[1:5, ]
 ```
 
 ### Estimate a three-regime BTPD model
@@ -277,6 +281,14 @@ plot(fit2, which = 1)
 ```{r plot2, fig.height=3.5}
 # Threshold variable with buffer-zone boundaries
 plot(fit2, which = 2)
+```
+
+For fully interactive exploration — upload your own data, run sequential
+tests, visualise regime dynamics, and export results — launch the built-in
+Shiny application:
+
+```{r shiny, eval=FALSE}
+bptr_shiny()
 ```
 
 ---
