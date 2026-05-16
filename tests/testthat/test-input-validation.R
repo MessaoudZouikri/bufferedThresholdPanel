@@ -192,6 +192,17 @@ test_that("bptr_bootstrap() errors when x is a plain list", {
 })
 
 # ================================================================
+# threshold_tidy() — boot argument validation
+# ================================================================
+
+test_that("threshold_tidy() errors when boot is not a bptr_bootstrap object", {
+  fit <- bptr(y ~ x1, data = df_min, id = "id", time = "time", q = "q",
+              n_thresh = 1L, buffer = FALSE, grid_size = 20L)
+  expect_error(threshold_tidy(fit, boot = list(gamma_boot = 1:3)),
+               "must be a 'bptr_bootstrap' object")
+})
+
+# ================================================================
 # predict.bptr() — newdata validation
 # ================================================================
 

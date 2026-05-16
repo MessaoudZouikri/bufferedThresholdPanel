@@ -116,6 +116,9 @@ tidy.bptr <- function(x, conf.int = FALSE, conf.level = 0.95, ...) {
 #' @export
 threshold_tidy <- function(x, conf.level = 0.95, boot = NULL) {
 
+  if (!is.null(boot) && !inherits(boot, "bptr_bootstrap"))
+    stop("'boot' must be a 'bptr_bootstrap' object returned by bptr_bootstrap().")
+
   thresh  <- x$thresholds
   n_t     <- length(thresh)
   alpha   <- 1 - conf.level

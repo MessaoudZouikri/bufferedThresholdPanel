@@ -209,7 +209,8 @@ test_that("threshold_tidy() converts vector gamma_boot to matrix (defensive guar
   fit <- bptr(y ~ x1 + x2, data = df,
               id = "id", time = "time", q = "q",
               n_thresh = 1, buffer = FALSE)
-  fake_boot <- list(gamma_boot = c(-0.2, 0.0, 0.1, 0.3))  # vector, not matrix
+  fake_boot <- structure(list(gamma_boot = c(-0.2, 0.0, 0.1, 0.3)),
+                         class = "bptr_bootstrap")
   tt <- threshold_tidy(fit, boot = fake_boot)
   expect_true(is.data.frame(tt))
   expect_true(all(tt$conf.low <= tt$conf.high))
